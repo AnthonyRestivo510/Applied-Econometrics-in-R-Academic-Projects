@@ -1,0 +1,316 @@
+---
+title: "Dummy Variables Lab"
+author: "Anthony Restivo"
+date: "11/2/2025"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+### the code below will round answers to 4 decimals and make sure output is not in scientific notation format
+knitr::opts_chunk$set(echo = TRUE)
+knitr::knit_hooks$set(inline = function(x) {
+  x <- sprintf("%1.4f", x)
+  paste(x, collapse = ", ")
+})
+options(scipen=999)
+## uncomment and run the line below if you have never installed the stargazer package
+# install.packages("stargazer")
+#install.packages("stats")
+rm(list=ls())
+library(tidyverse)
+library(stargazer)
+library(wooldridge)
+library(stats)
+```
+ <font size="4">
+ 
+***
+
+## Intro
+
+We will take today's exercise as an opportunity to learn about how to estimate the effect of qualitative variables (like a person's race or sex, the industry a firm operates in, the state a household or firm is located in etc) on the dependent variable.
+
+More generally, these variables are known as **categorical variables** as they reflect information about being in different categories, like sex, race, state, country, industry, etc, where it would not be natural to treat those categories in the same way we treat quantitative variables.
+
+Note that some categorical variables come in the form of binary information: whether a person self reports as female or male, whether they have attended college or not, whether they own a computer or not, whether the firm offers a retirement plan or not, whether a state has capital punishment or not, etc etc.
+
+Note that the information in these variables can be captured by defining a **binary variable** also known as a **dummy variable**, **indicator variable**, or a **zero-one variable**.
+
+We will start by investigating whether there are differences in wages across qualitative categories like race and sex.
+
+## Q0
+
+We will work with the dataset "wage1" in the Wooldridge package. Make sure you have the Wooldridge package and other packages you find handy loaded, I have included some handy ones in the preamble above, take a moment to load them in.
+
+Once your packages are loaded, assign the Wooldridge dataset "wage1" to an object named "df" or similar.
+
+```{r}
+df <- wage1
+
+### the code below will be used to demonstrate how R can handle categorical variables directly
+df <- df %>%
+  mutate(mf = case_when(grepl(1, female)~"F", grepl(0,female)~"M"))
+```
+
+
+
+## Q1
+
+Consider the following regression model:
+
+$$wage_i = \beta_0 + \beta_1 female_i + \beta_2 nonwhite_i+ \beta_3 educ_i \\ + \beta_4 exper_i +\beta_5 tenure_i+u_i$$
+
+where:
+
+female = 1 if individual i is female, and 0 otherwise (male)
+
+nonwhite = 1 if individual is not white, and 0 otherwise (white)
+
+educ = the number of years of education
+
+experience = years of potential experience
+
+tenure = years with current employer
+
+If people never changed jobs then tenure & experience
+would be perfectly collinear 
+
+**Q for chat:** who is the base category? (who has values of 0
+for female indicator and nonwhite indicator?)
+
+A: 
+
+### Q1.a
+
+
+Q:Estimate the model above, store the results in an object named "ols1" (or similar) and print the results using summary().
+
+A:
+```{r}
+ols1 <- lm(wage~female+nonwhite+educ+exper+tenure, data=df)
+ols1 %>% summary()
+stargazer(ols1,type="text")
+```
+### Q1.b
+
+Show the students how to use the as.factor and relevel function to work with categorical variables in R when they are entered as strings.
+
+```{r}
+lm(wage~as.factor(mf),data=df) %>% summary()
+
+df$mf <-relevel(factor(df$mf), ref="M")
+
+lm(wage~as.factor(mf),data=df) %>% summary()
+```
+***
+
+## Q2
+Using your results from Q1, calculate the following the expected value of wage conditional on the given information in each problem.
+```{r}
+stargazer(ols1,type="text")
+coefs1 <- summary(ols1)$coefficients[]
+coefs1
+coefs1["female" ,1]
+coefs1["nonwhite" ,1]
+```
+ 
+### Q2.a
+Interpret the coefficient on female and nonwhite.
+
+A: All else equal, a females hourly wage is \$ `r coefs1["female" ,1] %>%abs() ` less than male's hourly wage. This effect is statistically significant at the conventional significance levels. 
+
+All else equal, a nonwhite hourly wage is \$ `r coefs1["nonwhite" ,1] %>%abs() ` lower than a white individual's wage. 
+
+### Q2.b
+Expected wages for a white female with average education, experience, and tenure.
+
+```{r}
+pred_1<-
+data.frame(female=1,nonwhite=0,educ=mean(df$educ),exper=mean(df$exper),tenure=mean(df$tenure)) 
+pred_1wage<-
+predict(ols1,pred_1)
+
+```
+A: The predicted wage for a white female for the average education experience in tenure is\$ `r pred_1wage ` per hour. 
+
+### Q2.c
+Expected wages for a white male with average education, experience, and tenure.
+```{r}
+pred_1<-
+data.frame(male=1,nonwhite=0,educ=mean(df$educ),exper=mean(df$exper),tenure=mean(df$tenure)) 
+
+pred_1
+
+```
+A: The predicted wage for a white male for the average experience in tenure is 5.104563
+
+### Q2.
+Expected wages for a nonwhite female with average education, experience, and tenure.
+```{r}
+pred_1<-
+data.frame(female=1,nonwhite=1,educ=mean(df$educ),exper=mean(df$exper),tenure=mean(df$tenure)) 
+pred_1
+predict(ols1,pred_1)
+
+```
+A:The predicted wage for a nonwhite female fro the average experience in tenure is 4.848209 
+
+### Q2.e
+Expected wages for a nonwhite male with average education, experience, and tenure.
+```{r}
+pred_1<-
+data.frame(male=1,nonwhite=1,educ=mean(df$educ),exper=mean(df$exper),tenure=mean(df$tenure))
+
+pred_1
+
+```
+A: The predicted wage for a nonwhite male from the average experience in tenure is 5.104563
+
+
+## Q3 
+
+$$wage_i = \beta_0 + \beta_1 female_i + \beta_2 nonwhite_i+ \beta_3 educ_i \\ + \beta_4 exper_i +\beta_5 tenure_i+u_i$$
+
+Consider the formal hypothesis test that, for otherwise identical individuals, a female's hourly wage is different from a male's hourly wage.
+
+null: no difference in hourly wages
+alternative: there is a difference in hourly wages 
+
+### Q3.a
+Specify the null and alternative hypothesis for the hypothesis test above
+
+Null Hypothesis - $H_O:\beta_1 =0$
+
+Alternative Hypothesis - $H_A: \beta_1 \neq0$
+
+### Q3.b
+
+Use the summary() function on your regression results to find the following:
+
+```{r}
+coefs1
+coefs1["female","t value"]
+coefs1["female","Pr(>|t|)"]
+```
+
+
+i. The t-statistic for the hypothesis test above.
+
+A: The T statistic for the two sided alternative test above is `r coefs1["female","t value"]`
+
+ii. The p-value associated with the t-statistic above.
+
+A: The P value for the two sided alternative test above is < `r coefs1["female","Pr(>|t|)"]`
+
+### Q3.c
+Formally report the conclusion you reach regarding this hypothesis in Q3 at the $\alpha=0.05$ significance level (5% significance level). 
+
+A: We reject the null hypothesis and we can conclude that the wage between the genders male and female are not the same.  
+
+### Q3.d
+Do you think your results here indicate that there is a wage gap based on gender? 
+
+Hint - think about whether your estimated effect here is an unbiased estimate of the effect of gender on wages, or whether there are omitted variables that are correlated with wages and gender that should be included in the model. Make an argument for whichever you believe to be the case.
+
+A: Yes there is a wage gap as we can see from the estimates the females earn less than the males. However there possibly could be omitted variables present which would have a major impact on wages within the gender. 
+
+## Q4
+
+$$wage_i = \beta_0 + \beta_1 female_i + \beta_2 nonwhite_i+ \beta_3 educ_i \\ + \beta_4 exper_i +\beta_5 tenure_i+u_i$$
+
+Consider the formal hypothesis test that, for otherwise identical individuals, a white individual's wage is different from a nonwhite individuals hourly wage. 
+
+### Q4.a
+Specify the null and alternative hypothesis for the hypothesis test above
+
+Null Hypothesis - $H_O:\beta_2=0$
+
+Alternative Hypothesis - $H_A:\beta_2 \neq0$
+
+### Q4.b
+
+Use the summary() function on your regression results to find the following:
+
+```{r}
+coefs1
+coefs1["nonwhite","t value"]
+coefs1["nonwhite","Pr(>|t|)"]
+```
+
+
+i. The t-statistic for the hypothesis test above.
+
+A: The T statistic for the two sided alternative test above is `r coefs1["nonwhite","t value"]`
+
+ii. The p-value associated with the t-statistic above.
+
+A: The p value associated with the t-statistic for the two sided alternative test above is `r coefs1["nonwhite","Pr(>|t|)"]`
+
+### Q4.d
+Formally report the conclusion you reach regarding this hypothesis in Q4 at the $\alpha=0.05$ significance level (5% significance level).
+
+A: We fail to reject the null hypothesis. There's not a wage gap between white an nonwhite individuals. 
+
+## Q5
+Let's explore the use of dummy variables to allow for the slope parameters to differ across groups.
+
+Consider a model that includes **interactions** between the qualitative variable *female* and the quantitative variable *exper*.
+
+This will allow us to examine whether the returns to experience are the same for males and females.
+
+$$wage_i=\beta_0 + \beta_1 female_i + \beta_2 nonwhite_i+ \beta_3 educ_i + \\ + \beta_4 exper_i +\beta_5 exper_i\times female_i\\+\beta_6 tenure_i + u_i$$
+Notice that for this model, if $\beta_5\neq0$, the partial effect of experience depends on whether the individual is female: $$\frac{\partial wage}{\partial exper}=\beta_4+\beta_5 female_i$$
+meaning that if the individual is male (female = 0) the return to experience is: $$\frac{\partial wage}{\partial exper}=\beta_4+\beta_5\times (0)\\=\beta_4$$ while if the individual is female (female=1), the return to experience is $$\frac{\partial wage}{\partial exper}=\beta_4+\beta_5\times(1)\\=\beta_4+\beta_5$$
+and these are different from each other so long as $\beta_5\neq0$.
+
+Estimate the model above, store the results in an object named "ols2" (or similar), and print the results along with your output from Q1.a using the stargazer package.
+
+```{r}
+ols2 <- lm(wage~female+nonwhite+educ+exper+exper:female+tenure,data=df) 
+stargazer(ols2,type="text")
+
+coefs2 <- summary(ols2)$coefficients[]
+coefs2["exper","Estimate"]
+
+```
+### Q5.a
+Based on your estimates, what is the expected increase in hourly wages for an additional 10 years experience for a male and for a female?
+
+A: For an additional 10 years of experience for a male, their hourly wage is expected to increase \$`r 10*coefs2["exper","Estimate"] ` per hour. An otherwise identical female will have their hourly wages increase by \$`r 10*(coefs2["exper","Estimate"]+coefs2["female:exper","Estimate"])` per hour. 
+
+### Q5.b
+
+How is this estimate different from the expected increase in hourly wages for an additional 10 years experience based on your estimates from the model in Q1? 
+
+A: In q1 there wasn't a difference from hourly wages from male's and female's. Although q5 their is a difference with the return to experience for male's and female's.  
+
+
+### Q5.c
+Specify the null and alternative hypothesis for a test that the return to experience is the same for the sexes against the alternative that the return to experience is different across the sexes.
+
+Null hypothesis - $H_O: \beta_5=0$
+
+Alternative hypothesis - $H_A: \beta_5 \neq0$
+
+### Q5.d
+Address the following...
+
+```{r}
+coefs2
+coefs2["exper","t value"]
+coefs2["exper","Pr(>|t|)"]
+```
+
+
+i. The t-statistic associated with your hypothesis test in Q5C.
+
+A: The T statistic for the two sided alternative test above is `r coefs2["exper","t value"]`. 
+
+ii. The p-value associated with the t-statistic above.
+
+A: The p value associated with the t-statistic for the two sided alternative test above is `r coefs2["exper","Pr(>|t|)"]`. 
+
+iii. Reach a formal conclusion to your hypothesis test (at the 5% significance level) in Q5B using your preferred method (critical values, p, and communicate your conclusion formally below.
+
+A: We reject the null hypothesis. We can conclude the return to experience is NOT the same for males and females. 
+</font>
