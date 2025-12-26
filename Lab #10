@@ -1,0 +1,604 @@
+Binary Dependent Variables
+Anthony Restivo
+11/09/20al rates. Think about an economic model like
+where:
+
+approve = 1 if the applicant is approved for the loan, and 0 if they are rejected. Hence, our dependent variable is “binary”.
+
+credit risk factors could include factors like
+
+applicant’s housing expenditures and other debt obligations, as a fraction of total income
+
+the employment status of the applicant
+
+their history of late payments
+
+whether they have a cosigner
+
+Demographic factors could include things like:
+
+applicant race
+
+applicant sex
+
+applicant marital status
+
+number of dependents
+
+and other things.
+
+Models that have a binary dependent variable are known as linear probability models (LPM for short), we will estimate a few below.
+
+Q0
+Clear your environment and assign the data “loanapp” from the Wooldridge package to an object named df or similar.
+
+The data is pulled from the article at the following link, let’s read the abstract: https://link.springer.com/article/10.1007/BF00174551
+
+df <- loanapp 
+Q1
+Let’s do a “warmup” of looking at various descriptive statistics with our data.
+
+Q1A
+Find the average loan approval rate for 3 different groups of individuals: white individuals, black individuals, and hispanic individuals.
+
+Identify how many individuals from the sample there are in each of these groups, and comment on the differences in loan approval rates across the groups.
+
+Hint - let’s learn how to do something like this using dplyr, part of the tidyverse package, make sure you have tidyverse loaded!
+
+avg_approve <- df %>% 
+  group_by(black, hispan,white) %>% 
+  summarize(mean(approve),n())
+## `summarise()` has grouped output by 'black', 'hispan'. You can override using
+## the `.groups` argument.
+avg_approve
+## # A tibble: 3 × 5
+## # Groups:   black, hispan [3]
+##   black hispan white `mean(approve)` `n()`
+##   <int>  <int> <int>           <dbl> <int>
+## 1     0      0     1           0.908  1681
+## 2     0      1     0           0.766   111
+## 3     1      0     0           0.675   197
+A: The mean approval rate for a white individual is 90.8%. The mean approval rate for a hispanic individual is 76.6%. The mean approval rate for a black individual is 67.5%.
+
+Q1B
+Explore whether there are differences in credit risk factors between black, hispanic, and white individuals. Find the average bankruptcy rates and average debt obligations (as % of total income) across these 3 groups, and comment on the differences across the groups.
+
+avg_credit <- df %>% 
+  group_by(black, hispan,white) %>% 
+  summarize(mean(pubrec),mean(obrat))
+## `summarise()` has grouped output by 'black', 'hispan'. You can override using
+## the `.groups` argument.
+avg_credit
+## # A tibble: 3 × 5
+## # Groups:   black, hispan [3]
+##   black hispan white `mean(pubrec)` `mean(obrat)`
+##   <int>  <int> <int>          <dbl>         <dbl>
+## 1     0      0     1         0.0523          32.0
+## 2     0      1     0         0.117           33.5
+## 3     1      0     0         0.183           34.9
+A: The average credit risk factor for a white individual is 5.2%. The average credit risk factor for a Hispanic individual is 11.7%. The average credit risk factor for a black individual is 18.3%.
+
+Q1C
+What relationship do you see in the data between the income of the applicant, and the size of the loan they are applying for?
+
+Plot a scatter plot with income on the horizontal axis and loan amount on the vertical axis
+
+plot(df$appinc,df$loanamt)
+
+
+Q2
+Consider an initial linear probability model like the following:
+Q for chat: What does the intercept represent in this model?
+
+A: Average loan approval rate for nonwhite individuals.
+
+Q2A
+Estimate this model and store the results in an object named “ols1” or similar.
+
+Print the output results using stargazer.
+
+ols1 <- lm(approve~white,data=df)
+stargazer(ols1, type="text")
+## 
+## ===============================================
+##                         Dependent variable:    
+##                     ---------------------------
+##                               approve          
+## -----------------------------------------------
+## white                        0.201***          
+##                               (0.020)          
+##                                                
+## Constant                     0.708***          
+##                               (0.018)          
+##                                                
+## -----------------------------------------------
+## Observations                   1,989           
+## R2                             0.049           
+## Adjusted R2                    0.048           
+## Residual Std. Error      0.320 (df = 1987)     
+## F Statistic          102.226*** (df = 1; 1987) 
+## ===============================================
+## Note:               *p<0.1; **p<0.05; ***p<0.01
+summary(ols1)
+## 
+## Call:
+## lm(formula = approve ~ white, data = df)
+## 
+## Residuals:
+##      Min       1Q   Median       3Q      Max 
+## -0.90839  0.09161  0.09161  0.09161  0.29221 
+## 
+## Coefficients:
+##             Estimate Std. Error t value            Pr(>|t|)    
+## (Intercept)  0.70779    0.01824   38.81 <0.0000000000000002 ***
+## white        0.20060    0.01984   10.11 <0.0000000000000002 ***
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+## 
+## Residual standard error: 0.3201 on 1987 degrees of freedom
+## Multiple R-squared:  0.04893,    Adjusted R-squared:  0.04845 
+## F-statistic: 102.2 on 1 and 1987 DF,  p-value: < 0.00000000000000022
+Q2B
+Suppose the appropriate credit risk factors have been controlled for. If there is discrimination against minorities, what is the sign of 
+?
+
+A: 
+ will be positive if there is discrimination that favors white applicants (harms minority applicants).
+
+Q2C
+Interpret the coefficient on white from your regression above.
+
+Is it statistically significant at the conventional significance levels?
+
+Is it economically significant?
+
+A: White Individuals have a 20.1% advantage in loan approval rates. It is significant at the levels and is economically significant because it’s a major advantage.
+
+Q3
+Add a few credit risk and demographic variables to the model. Specifically, estimate the following:
+
+ 
+
+where, from the help file:
+
+white: =1 for white individuals, and =0 for black/hispanic individuals
+
+hrat: housing expenditure, percent total income
+
+obrat: other debt obligations, percent total income
+
+loanprc: percent of house price being loaned (amt/price)
+
+male: indicator for male
+
+married: indicator for married
+
+dep: number of dependents
+
+sch: indicator for >12 years schooling
+
+cosign: indicator for having a cosigner
+
+chist: =0 if applicant has accounts delinquent >= 60 days
+
+pubrec: indicator for filing bankruptcy
+
+mortlat1: indicator for 1 or 2 late mortgage payments in past
+
+mortlat2: indicator for >2 late mortgage payments in past
+
+vr: high vacancy indicator, =1 if census tract vacancy rate is higher than the median for the MSA.
+
+Q3A
+Estimate the model above, store your results in an object named “ols2” or similar. Print the results using stargazer alongside the results from the model in Q2.
+
+model3a <- approve ~ white + hrat + obrat + loanprc + unem + male + married + dep + sch + cosign + chist + pubrec + mortlat1 + mortlat2 + vr
+
+ols2 <- lm(model3a, data=df)
+
+
+
+stargazer(ols1,ols2,type="text")
+## 
+## =======================================================================
+##                                     Dependent variable:                
+##                     ---------------------------------------------------
+##                                           approve                      
+##                                (1)                       (2)           
+## -----------------------------------------------------------------------
+## white                       0.201***                  0.129***         
+##                              (0.020)                   (0.020)         
+##                                                                        
+## hrat                                                    0.002          
+##                                                        (0.001)         
+##                                                                        
+## obrat                                                 -0.005***        
+##                                                        (0.001)         
+##                                                                        
+## loanprc                                               -0.147***        
+##                                                        (0.038)         
+##                                                                        
+## unem                                                  -0.007**         
+##                                                        (0.003)         
+##                                                                        
+## male                                                   -0.004          
+##                                                        (0.019)         
+##                                                                        
+## married                                               0.046***         
+##                                                        (0.016)         
+##                                                                        
+## dep                                                    -0.007          
+##                                                        (0.007)         
+##                                                                        
+## sch                                                     0.002          
+##                                                        (0.017)         
+##                                                                        
+## cosign                                                  0.010          
+##                                                        (0.041)         
+##                                                                        
+## chist                                                 0.133***         
+##                                                        (0.019)         
+##                                                                        
+## pubrec                                                -0.242***        
+##                                                        (0.028)         
+##                                                                        
+## mortlat1                                               -0.057          
+##                                                        (0.050)         
+##                                                                        
+## mortlat2                                               -0.114*         
+##                                                        (0.067)         
+##                                                                        
+## vr                                                    -0.031**         
+##                                                        (0.014)         
+##                                                                        
+## Constant                    0.708***                  0.937***         
+##                              (0.018)                   (0.053)         
+##                                                                        
+## -----------------------------------------------------------------------
+## Observations                  1,989                     1,971          
+## R2                            0.049                     0.166          
+## Adjusted R2                   0.048                     0.159          
+## Residual Std. Error     0.320 (df = 1987)         0.302 (df = 1955)    
+## F Statistic         102.226*** (df = 1; 1987) 25.863*** (df = 15; 1955)
+## =======================================================================
+## Note:                                       *p<0.1; **p<0.05; ***p<0.01
+Q3B
+Interpret the coefficient on white.Relative to the model in Q2, what happens to the coefficient on white? Is there evidence of discrimination against nonwhites?
+
+A:Both models show an example of an advantage of approval rate. There appears to be some discrimination against the nonwhites.
+
+Q3C
+Suppose the individuals other debt obligations as a percentage of income were to increase by 10 percentage points. What is the estimated impact on the probability of loan approval?
+
+A: The loan approval rate would decrease due to individuals unable to keep up with paying other debt obligations due to their low income compared to the debt.
+
+Q4
+Consider a model identical to the model in Q3A, but allowing for there to be differences by race in the effect of other debt obligations (obrat) on loan approval.
+
+ 
+
+Notice the interaction between white and obrat allows for the effect of obrat to possibly be different, depending on the value of white:
+
+ 
+
+That is, for white individuals:
+
+ 
+and for minority individuals
+
+ 
+
+Q4A
+Estimate the model above, store the estimates as “ols3” or similar, and print them using Stargazer alongside your other estimates from Q2 and Q3.
+
+model4a <- approve ~ white + hrat + obrat + obrat:white + loanprc + unem + male + married + dep + sch + cosign + chist + pubrec + mortlat1 + mortlat2 + vr
+
+ols3 <- lm(, data=df)
+
+stargazer(ols1,ols2,ols3, type = "text")
+## 
+## ================================================================================================
+##                                                 Dependent variable:                             
+##                     ----------------------------------------------------------------------------
+##                                           approve                                  NA           
+##                                (1)                       (2)                      (3)           
+## ------------------------------------------------------------------------------------------------
+## loanamt                                                                         0.00002         
+##                                                                                 (0.0002)        
+##                                                                                                 
+## action                                                                           -0.031         
+##                                                                                 (0.027)         
+##                                                                                                 
+## msa                                                                                             
+##                                                                                                 
+##                                                                                                 
+## suffolk                                                                          0.027*         
+##                                                                                 (0.016)         
+##                                                                                                 
+## appinc                                                                          -0.0001         
+##                                                                                 (0.0001)        
+##                                                                                                 
+## typur                                                                            -0.001         
+##                                                                                 (0.002)         
+##                                                                                                 
+## unit                                                                             -0.014         
+##                                                                                 (0.025)         
+##                                                                                                 
+## white                       0.201***                  0.129***                                  
+##                              (0.020)                   (0.020)                                  
+##                                                                                                 
+## hrat                                                    0.002                    -0.001         
+##                                                        (0.001)                  (0.001)         
+##                                                                                                 
+## obrat                                                 -0.005***                  -0.001         
+##                                                        (0.001)                  (0.001)         
+##                                                                                                 
+## fixadj                                                                           0.012          
+##                                                                                 (0.011)         
+##                                                                                                 
+## term                                                                            -0.00000        
+##                                                                                (0.00000)        
+##                                                                                                 
+## apr                                                                             -0.00003        
+##                                                                                (0.00005)        
+##                                                                                                 
+## prop                                                                             0.005          
+##                                                                                 (0.012)         
+##                                                                                                 
+## inss                                                                             -0.018         
+##                                                                                 (0.013)         
+##                                                                                                 
+## inson                                                                            0.054          
+##                                                                                 (0.040)         
+##                                                                                                 
+## gift                                                                             -0.016         
+##                                                                                 (0.013)         
+##                                                                                                 
+## loanprc                                               -0.147***                  -0.038         
+##                                                        (0.038)                  (0.041)         
+##                                                                                                 
+## thick                                                                           -0.046*         
+##                                                                                 (0.024)         
+##                                                                                                 
+## unem                                                  -0.007**                   0.004          
+##                                                        (0.003)                  (0.002)         
+##                                                                                                 
+## min30                                                                           -0.062**        
+##                                                                                 (0.025)         
+##                                                                                                 
+## bd                                                                               -0.002         
+##                                                                                 (0.010)         
+##                                                                                                 
+## mi                                                                               -0.008         
+##                                                                                 (0.017)         
+##                                                                                                 
+## old                                                                              0.018*         
+##                                                                                 (0.010)         
+##                                                                                                 
+## male                                                   -0.004                    0.008          
+##                                                        (0.019)                  (0.013)         
+##                                                                                                 
+## reject                                                                           0.085          
+##                                                                                 (0.054)         
+##                                                                                                 
+## approve                                                                                         
+##                                                                                                 
+##                                                                                                 
+## mortno                                                                           -0.067         
+##                                                                                 (0.135)         
+##                                                                                                 
+## mortperf                                                                         -0.042         
+##                                                                                 (0.080)         
+##                                                                                                 
+## married                                               0.046***                   0.010          
+##                                                        (0.016)                  (0.011)         
+##                                                                                                 
+## dep                                                    -0.007                    -0.004         
+##                                                        (0.007)                  (0.005)         
+##                                                                                                 
+## emp                                                                             -0.016*         
+##                                                                                 (0.008)         
+##                                                                                                 
+## yjob                                                                            0.024***        
+##                                                                                 (0.007)         
+##                                                                                                 
+## self                                                                             0.019          
+##                                                                                 (0.014)         
+##                                                                                                 
+## atotinc                                                                        0.00001**        
+##                                                                                (0.00000)        
+##                                                                                                 
+## cototinc                                                                        0.00000         
+##                                                                                (0.00000)        
+##                                                                                                 
+## hexp                                                                            0.00002         
+##                                                                                (0.00002)        
+##                                                                                                 
+## price                                                                          -0.0004***       
+##                                                                                 (0.0001)        
+##                                                                                                 
+## other                                                                           -0.0001         
+##                                                                                 (0.0003)        
+##                                                                                                 
+## liq                                                                            0.00000***       
+##                                                                                (0.00000)        
+##                                                                                                 
+## rep                                                                             0.022***        
+##                                                                                 (0.008)         
+##                                                                                                 
+## gdlin                                                                           -0.0001         
+##                                                                                 (0.0002)        
+##                                                                                                 
+## lines                                                                           -0.00000        
+##                                                                                (0.00000)        
+##                                                                                                 
+## mortg                                                                            -0.046         
+##                                                                                 (0.057)         
+##                                                                                                 
+## cons                                                                             -0.002         
+##                                                                                 (0.006)         
+##                                                                                                 
+## sch                                                     0.002                    0.005          
+##                                                        (0.017)                  (0.012)         
+##                                                                                                 
+## black                                                                            -0.019         
+##                                                                                 (0.017)         
+##                                                                                                 
+## hispan                                                                           -0.028         
+##                                                                                 (0.021)         
+##                                                                                                 
+## cosign                                                  0.010                    0.018          
+##                                                        (0.041)                  (0.029)         
+##                                                                                                 
+## unver                                                                            -0.026         
+##                                                                                 (0.024)         
+##                                                                                                 
+## review                                                                          0.00003*        
+##                                                                                (0.00002)        
+##                                                                                                 
+## netw                                                                           0.00002***       
+##                                                                                (0.00001)        
+##                                                                                                 
+## chist                                                 0.133***                   0.010          
+##                                                        (0.019)                  (0.028)         
+##                                                                                                 
+## multi                                                                            0.076*         
+##                                                                                 (0.041)         
+##                                                                                                 
+## pubrec                                                -0.242***                  -0.027         
+##                                                        (0.028)                  (0.019)         
+##                                                                                                 
+## mortlat1                                               -0.057                                   
+##                                                        (0.050)                                  
+##                                                                                                 
+## mortlat2                                               -0.114*                                  
+##                                                        (0.067)                                  
+##                                                                                                 
+## vr                                                    -0.031**                  0.022**         
+##                                                        (0.014)                  (0.010)         
+##                                                                                                 
+## Constant                    0.708***                  0.937***                  1.194***        
+##                              (0.018)                   (0.053)                  (0.202)         
+##                                                                                                 
+## ------------------------------------------------------------------------------------------------
+## Observations                  1,989                     1,971                    1,778          
+## R2                            0.049                     0.166                    0.093          
+## Adjusted R2                   0.048                     0.159                    0.065          
+## Residual Std. Error     0.320 (df = 1987)         0.302 (df = 1955)        0.191 (df = 1724)    
+## F Statistic         102.226*** (df = 1; 1987) 25.863*** (df = 15; 1955) 3.342*** (df = 53; 1724)
+## ================================================================================================
+## Note:                                                                *p<0.1; **p<0.05; ***p<0.01
+summary(ols3)
+## 
+## Call:
+## lm(data = df)
+## 
+## Residuals:
+##      Min       1Q   Median       3Q      Max 
+## -0.47282 -0.05548 -0.02396  0.00669  1.98166 
+## 
+## Coefficients: (5 not defined because of singularities)
+##                   Estimate     Std. Error t value      Pr(>|t|)    
+## (Intercept)  1.19386773223  0.20232580971   5.901 0.00000000435 ***
+## loanamt      0.00001794209  0.00018931766   0.095      0.924507    
+## action      -0.03100045962  0.02685080195  -1.155      0.248437    
+## msa                     NA             NA      NA            NA    
+## suffolk      0.02697402020  0.01608167265   1.677      0.093662 .  
+## appinc      -0.00006588006  0.00007254997  -0.908      0.363971    
+## typur       -0.00097018988  0.00183934162  -0.527      0.597938    
+## unit        -0.01384921875  0.02527374094  -0.548      0.583784    
+## married      0.00983305013  0.01122778318   0.876      0.381273    
+## dep         -0.00403292403  0.00462793848  -0.871      0.383641    
+## emp         -0.01598892794  0.00817577568  -1.956      0.050668 .  
+## yjob         0.02441839958  0.00730867964   3.341      0.000853 ***
+## self         0.01873921887  0.01417661296   1.322      0.186397    
+## atotinc      0.00000505368  0.00000202221   2.499      0.012544 *  
+## cototinc     0.00000047207  0.00000271433   0.174      0.861950    
+## hexp         0.00002096168  0.00001863078   1.125      0.260699    
+## price       -0.00035131724  0.00011426813  -3.074      0.002142 ** 
+## other       -0.00008246565  0.00026626976  -0.310      0.756821    
+## liq          0.00000030063  0.00000006919   4.345 0.00001473684 ***
+## rep          0.02232824806  0.00774937564   2.881      0.004009 ** 
+## gdlin       -0.00011335642  0.00020427260  -0.555      0.579016    
+## lines       -0.00000017765  0.00000019704  -0.902      0.367401    
+## mortg       -0.04588706883  0.05654850355  -0.811      0.417211    
+## cons        -0.00157191388  0.00641574395  -0.245      0.806479    
+## pubrec      -0.02659413444  0.01909784186  -1.393      0.163944    
+## hrat        -0.00073095138  0.00107277177  -0.681      0.495731    
+## obrat       -0.00052574745  0.00075559384  -0.696      0.486644    
+## fixadj       0.01153835379  0.01065610754   1.083      0.279052    
+## term        -0.00000003422  0.00000013826  -0.247      0.804568    
+## apr         -0.00003077679  0.00004583511  -0.671      0.502013    
+## prop         0.00458669882  0.01199919515   0.382      0.702323    
+## inss        -0.01812982155  0.01337626116  -1.355      0.175476    
+## inson        0.05374281826  0.04010513549   1.340      0.180406    
+## gift        -0.01557784663  0.01275287869  -1.222      0.222058    
+## cosign       0.01776308759  0.02860729403   0.621      0.534729    
+## unver       -0.02559422988  0.02431952409  -1.052      0.292757    
+## review       0.00002907122  0.00001580722   1.839      0.066071 .  
+## netw         0.00001599088  0.00000565963   2.825      0.004776 ** 
+## unem         0.00359461498  0.00220852688   1.628      0.103791    
+## min30       -0.06224347085  0.02538118494  -2.452      0.014291 *  
+## bd          -0.00221706989  0.00970529156  -0.228      0.819332    
+## mi          -0.00808521793  0.01708227405  -0.473      0.636052    
+## old          0.01753183348  0.00994514359   1.763      0.078102 .  
+## vr           0.02249970277  0.01021361926   2.203      0.027733 *  
+## sch          0.00529002202  0.01154034994   0.458      0.646727    
+## black       -0.01910269365  0.01682639425  -1.135      0.256415    
+## hispan      -0.02826849049  0.02069930057  -1.366      0.172220    
+## male         0.00796356874  0.01278169546   0.623      0.533337    
+## reject       0.08499453551  0.05444803295   1.561      0.118702    
+## approve                 NA             NA      NA            NA    
+## mortno      -0.06662718985  0.13464198840  -0.495      0.620771    
+## mortperf    -0.04233895170  0.07999833314  -0.529      0.596702    
+## mortlat1                NA             NA      NA            NA    
+## mortlat2                NA             NA      NA            NA    
+## chist        0.00992944165  0.02825843980   0.351      0.725346    
+## multi        0.07624619804  0.04146677280   1.839      0.066127 .  
+## loanprc     -0.03842869561  0.04084194898  -0.941      0.346882    
+## thick       -0.04626484591  0.02386030199  -1.939      0.052666 .  
+## white                   NA             NA      NA            NA    
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+## 
+## Residual standard error: 0.1906 on 1724 degrees of freedom
+##   (211 observations deleted due to missingness)
+## Multiple R-squared:  0.09316,    Adjusted R-squared:  0.06528 
+## F-statistic: 3.342 on 53 and 1724 DF,  p-value: 0.00000000000002391
+Q4B
+Specify an appropriate hypothesis test for racial differences in the effect of other debt obligations on loan approvals.
+
+Null hypothesis - 
+
+Alternative hypothesis - 
+
+Q4C
+Is the interaction term significant at the conventional significance levels?
+
+(Make an argument using your preferred method - comparing the t-statistic to its critical value, based on p-values, confidence intervals, it’s up to you)
+
+A: The interaction tern is NOT significant at the conventional levels. We can see this from the high p-value and the t-stat being near zero.
+
+Q4D
+Suppose the individual’s other debt obligations as a percentage of income increase by 10 percentage points.
+
+obrat_white <- 100*(ols3$coefficients["obrat"]+ols3$coefficients["white:obrat"])
+
+obrat_minority <- 100*(ols3$coefficients["obrat"])
+A: The probability of loan approval decreases
+
+-0.5257475
+
+What is the estimated effect on the probability of loan approval if the individual is white?
+
+A: The probability would be around the same decreasing -0.5257475
+
+What if the individual is nonwhite?
+
+A:The probability of loan approval decreases
+
+-0.5257475
+
+Do you have evidence that other debt obligations are penalized differently between white individuals and nonwhite individuals?
+
+A: There is no strong evidence that that other debt obligations have been penalized between white individuals and nonwhite individuals.
