@@ -1,0 +1,50 @@
+---
+title: "INTRODUCTORY ECONOMETRICS"
+output: html_document
+date: "2025-09-07"
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(wooldridge)
+
+knitr::opts_chunk$set(echo = TRUE, comment = NA)
+```
+
+
+```{r}
+data(jtrain2)
+```
+
+
+```{r}
+jtrain_table < - jtrain2 %>%
+  group_by(train) %>%
+  summarize(n = n()) %>% 
+  mutate(prop = n() / sum(n), pct = prop*100) 
+
+jtrain_table
+```
+
+
+```{r}
+ - jtrain2 %>%
+  group_by(train) %>%
+  summarize(n = n()) %>% 
+  mutate(prop = n() / sum(n), pct = prop*100) 
+
+```
+```{r}
+ - jtrain2 %>%
+  group_by(train) %>%
+  summarize(avg_re78 = mean(re78*1000))
+```
+```{r}
+- jtrain2 %>%
+  group_by(train) %>%
+  summarize(prop_unem78 = mean(unem78), pct_unem78 = prop_unem78*100) 
+```
+
+
+  
+  

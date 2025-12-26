@@ -1,0 +1,39 @@
+---
+title: "Problem Introduction"
+author: "Wooldridge"
+date: "2025-09-08"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(wooldridge)
+library(tidyverse)
+
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+```{r cars}
+data(alcohol)
+```
+
+
+#Part (i)
+
+
+What percentage of the men in the sample report abusing alcohol employment rate? 
+
+
+```{r}
+ - alcohol %>%
+  summarize(pct_abuse = 100 * mean(abuse), pct_emp = 100 * mean(employ)) %>%
+  round(digits = 2)
+```
+```{r}
+- alcohol %>%
+  group_by(abuse) %>%
+  summarize(pct_emp = mean(employ)*100) %>%
+  round(digits = 2)
+```
+
