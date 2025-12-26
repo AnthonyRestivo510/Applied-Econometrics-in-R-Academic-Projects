@@ -1,0 +1,385 @@
+Hypothesis Testing 1
+Anthony Restivo
+10/20/25
+
+Intro
+As usual, we will use a particular econometric investigation as an opportunity to learn about hypothesis testing, as discussed in Chapter 4 of Wooldridge.
+
+Our question of interest will be:
+
+All else equal, do smaller schools fare better than larger schools in terms of math standardized test performance?
+
+To address this question, we will estimate the following model using OLS:
+
+
+where 
+ indexes the schools in our sample:
+
+math10 = % students who pass a math standardized test
+
+enroll = number of students at school
+
+totcomp = average annual teacher compensation (proxy for teacher quality)
+
+staff = number of staff per 1,000 students (proxy for individualized attention)
+
+Our data come from a sample of 408 high schools in Michigan for the year 1993.
+
+Q0
+Do a “Run All” and Knit the document to take a look at what we will be doing. The chunk below will load in the data and assign it to “df”.
+
+df <- meap93
+Q1 - preliminaries
+Q1.a
+Consider the partial effect of school size - that is, the effect of school size on math test scores, holding all other determinants of math test scores fixed.
+
+The students focus and determination to get a good grade.
+
+state your hypothesis
+
+All else equal, there should be a negative relationship between enrollment and math test scores.
+
+As enrollment goes up Math tends to go down.
+
+Expected effect: $ _1<0 $
+
+one-tailed hypothesis test
+
+For a one tailed hypothesis test, the null hypothesis is what we intend to provide evidence against.
+
+Therefore, the null (
+) is
+while the alternative hypothesis is
+Mantra - NULL UNLESS PROVEN ALTERNATIVE
+
+Meaning: You will assume the null hypothesis is true unless you collect overwhelming evidence against the null, evidence that favors some alternative hypothesis.
+two-tailed hypothesis test
+
+A two-tailed hypothesis test may be appropriate in many circumstances and is frequently used in practice.
+
+They allow for detection of population parameters that are “different from zero”, meaning the test will reject the null hypothesis either when the population parameter is appropriately far in the positive direction, or appropriately far in the negative direction.
+
+Two-tailed hypothesis test might be used when:
+
+unsure of direction of effect
+
+don’t want to risk failing to detect an effect in unexpected direction
+
+want to hold investigation to a higher standard, as the “threshold of evidence” is higher for two-tailed tests
+
+For a two-tailed hypothesis test, the null hypothesis is
+
+while the alternative is
+
+(Allows 
+ or 
+)
+
+Q1.b
+Consider the partial effect of teacher quality
+
+I believe the effect is a negative, with the impact on students a qualified teacher can nu motivate the students to receive great grades.
+
+Expected effect: 
+
+For a one tailed hypothesis test the null hypothesis is
+while the alternative hypothesis is
+
+For a two-tailed hypothesis test, the null hypothesis is
+
+while the alternative is
+
+Q1.c
+Consider the partial effect of individual attention.
+
+A negative, more attention generally results in a great grades.
+
+Expected effect: 
+
+For a one tailed hypothesis test the null hypothesis is
+B3 <= 0 while the alternative hypothesis is
+B3 > 0 For a two-tailed hypothesis test, the null hypothesis is
+B2 = 0
+
+while the alternative is
+B2 =/ 0
+
+Q2
+Q2.a - estimation
+Estimate the model discussed in the intro and store the results in an object named “ols1”.
+
+Print the output table using the summary function rather than stargazer.
+
+ols1 <- lm(math10~enroll+totcomp+staff, data=df)
+
+ols1 %>% summary() 
+## 
+## Call:
+## lm(formula = math10 ~ enroll + totcomp + staff, data = df)
+## 
+## Residuals:
+##     Min      1Q  Median      3Q     Max 
+## -22.235  -7.008  -0.807   6.097  40.689 
+## 
+## Coefficients:
+##               Estimate Std. Error t value   Pr(>|t|)    
+## (Intercept)  2.2740209  6.1137938   0.372      0.710    
+## enroll      -0.0001976  0.0002152  -0.918      0.359    
+## totcomp      0.0004586  0.0001004   4.570 0.00000649 ***
+## staff        0.0479199  0.0398140   1.204      0.229    
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+## 
+## Residual standard error: 10.24 on 404 degrees of freedom
+## Multiple R-squared:  0.05406,    Adjusted R-squared:  0.04704 
+## F-statistic: 7.697 on 3 and 404 DF,  p-value: 0.00005179
+Q2.b - store other info
+Store coefficients in “coef”, t-statistics in “t_stat”, and p-values in “p_val”
+
+coef <- summary(ols1)$coefficients[,"Estimate"]
+coef
+##   (Intercept)        enroll       totcomp         staff 
+##  2.2740209322 -0.0001975613  0.0004586119  0.0479198735
+t_stat <- summary(ols1)$coefficients[,"t value"]
+t_stat
+## (Intercept)      enroll     totcomp       staff 
+##   0.3719492  -0.9179348   4.5700302   1.2035926
+p_val <- summary(ols1)$coefficients[,"Pr(>|t|)"]
+p_val
+##    (Intercept)         enroll        totcomp          staff 
+## 0.710125657385 0.359200654826 0.000006489312 0.229451831645
+Inference - READ
+Reviewing a few concepts from Chapter 4 reading.
+
+t-statistics
+ 
+ 
+: the test statistic used for hypotheses regarding a single population parameter.
+
+ 
+where
+
+ is the estimated coefficient
+
+ is the hypothesized value of 
+ under the null hypothesis
+
+ is the standard error of 
+
+Notice that 
+ is the “distance” of your estimate, 
+ from its hypothesized value under the null, 
+, and is measured in terms of standard errors of 
+.
+
+The more evidence we have against the null hypothesis, the farther our estimate, 
+, is from its hypothesized value under the null, and therefore the larger 
+ is.
+significance level
+ 
+ 
+: the probability of falsely rejecting a true null hypothesis.
+
+Unpacking this statement a little:
+
+Suppose that a true null hypothesis means that 
+.
+
+Falsely rejecting this true null means you are concluding that either 
+ or 
+, when in reality 
+.
+
+This type of mistake is also known as a “type 1 error” in statistics.
+
+The significance level is chosen by the researcher. In other words, we “fix” the probability of falsely rejecting a null hypothesis that is true. We accept that this is a possibility, and chose the probability with which this event will happen.
+
+The shorthand for the significance level is “
+” (“alpha”).
+
+Typical (“conventional”) choices are 5% (
+) or occasionally 10% (
+).
+
+Smaller significance level
+
+ decreased probability of making a type 1 error
+
+ need increasingly stronger evidence against the null.
+
+ 
+ 
+: 
+ the probability of failing to reject a true null hypothesis.
+
+critical value for test statistic
+critical values are “the bar” we compare our evidence to determine whether it is sufficient to reject the null hypothesis
+
+one-tailed tests:
+
+For tests that a population parameter is positive, the critical value will be the value of t at the 
+ (e.g. 95th, 99th) percentile of the student’s test distribution. This will return a positive value.
+
+For tests that the population parameter is negative: the 
+ (e.g. 5th, 1st) percentile of the student’s t distribution. This will return a negative value.
+
+Notice that for both of these, you are putting the entirety of 
+ in a single tail, either the right tail, or the left tail.
+
+two-tailed tests:
+
+The only difference for two-tailed tests is that, rather than put the entirety of 
+ in one tail, you put 
+ 
+ in each tail.
+
+As such, you will be looking for the 
+ 
+ percentile of the t distribution for the critical value.
+
+For example, if you have 
+, then you would be looking for the value at the 
+ 
+ percentile of the t distribution.
+
+Note: smaller significance level 
+ smaller probability of type 1 error 
+ critical value further from zero.
+
+Decision rules
+based on critical values
+If the t-stat from estimates is more extreme than its critical value: reject 
+ at the 
+ level of significance.
+
+If the t-stat from estimates is between 0 and critical value: fail to reject 
+ at the 
+ level of significance.
+
+In other words: reject the null if the absolute value of your t statistic is greater than the absolute value of its critical value.
+
+based on p-values
+ 
+ 
+ the probability of getting a sample (data) that would give a test-statistic as extreme as the observed test-statistic, given that the null hypothesis is actually true.
+
+The way you show you have a lot of evidence against the null is to show that it is incredibly unlikely that you would get a sample of data that would give a regression estimate as extreme as your estimate if the null were true. P-values gives the probability of this event.
+
+When p-value 
+: reject the null hypothesis
+
+When p-value > 
+: fail to reject the null hypothesis
+
+Q3 - hypothesis testing
+Q3.a
+Q: Calculate and report the t-statistic associated with your hypothesis tests regarding the effect of school size on math test performance. The formula for the t-statistic from above is copied below for your convenience.
+
+p value (two tailed, normal approx) p=.3590
+
+Since t = -0.9179 it fails to reject the null hypothesis at 5% significant levels
+
+ 
+
+A: The t-statistic that corresponds to the effect of school size is NA. In this case we
+
+qt(.95, df)
+## Error in qt(0.95, df): Non-numeric argument to mathematical function
+Q3.b
+one-tailed hypothesis test:
+
+Q: Use the function “qt” to calculate and report the critical value for t at the 5% significance level and the 1% significance level for one tailed tests.
+
+Note that the degrees of freedom in any regression is
+
+consider that there are n observations and (k+1) parameters (k slopes + 1 intercept) so that
+
+deg.fr <- ols1$df.residual
+
+#?qt
+crit_t_5_left <- qt(0.05,deg.fr,lower.tail=T)
+crit_t_1_left <- qt(0.01,deg.fr,lower.tail=T)
+
+crit_t_5_right <- qt(0.05,deg.fr,lower.tail=F)
+crit_t_1_right <- qt(0.01,deg.fr,lower.tail=F)
+A:
+
+two-tailed hypothesis test
+
+Q: Find the appropriate critical value for the two-tailed hypothesis test, using the guidance above, and report it below.
+
+A:
+
+Q3.c
+one-tailed hypothesis test:
+
+Q: Consider your hypothesis in Q1.a regarding the effect of school size. Refer to your estimates and compare the relevant t-statistic to the critical values above.
+
+Use the decision rules from chapter 4 that are summarized above to reach a conclusion regarding the one-tailed hypothesis test for the effect of school size on math test scores.
+
+A: The t-statistic on totcomp is 4.5700. The critical is -1.6486. In this case we fail to reject the null hypothesis at the 5% significance level.
+
+two-tailed hypothesis test:
+
+Q: Repeat the above, but for a two-tailed hypothesis test of the hypothesis in Q1.b.
+
+Hint- for two-tailed tests, the “rule of thumb” is that the critical value is 2 for a two sided test at the 5% significance level.
+
+A: The t-stat on totcomp is 4.5700. Since this is larger than 2, we reject the null hypothesis at the 5% significance level.
+
+Q4 - p-values
+Focus on your estimates of the partial effect of school size.
+
+p-values:
+
+Reminder: p-value tells you the probability of getting a sample (data) that would give a t-statistic as high as (insert-calculated-t-stat-here) given that the null 
+ is true.
+
+Q: Use an inline R chunk to reference the p-value associated with your estimate 
+. Interpret the p-value.
+
+A: The p-value on enroll is 0.3600. This states the probability of getting a sample that would give us estimates as extreme as what we see in our results, given that the null hypothesis were actually true, is 36.0000%.
+
+Q5 - robust standard errors
+I have hinted in class about standard error (estimators) that are “robust” to violations of the homoskedasticity assumption. In other words, are robust to heteroskedasticity.
+
+Here is some code to show you how to get a table with “robust standard errors”.
+
+## robust standard errors
+coeftest(ols1, vcov = vcovHC(ols1, type="HC1"))
+## 
+## t test of coefficients:
+## 
+##                Estimate  Std. Error t value   Pr(>|t|)    
+## (Intercept)  2.27402093  7.96819660  0.2854     0.7755    
+## enroll      -0.00019756  0.00025548 -0.7733     0.4398    
+## totcomp      0.00045861  0.00011344  4.0427 0.00006329 ***
+## staff        0.04791987  0.05692911  0.8417     0.4004    
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+## non-robust standard errors
+
+summary(ols1)
+## 
+## Call:
+## lm(formula = math10 ~ enroll + totcomp + staff, data = df)
+## 
+## Residuals:
+##     Min      1Q  Median      3Q     Max 
+## -22.235  -7.008  -0.807   6.097  40.689 
+## 
+## Coefficients:
+##               Estimate Std. Error t value   Pr(>|t|)    
+## (Intercept)  2.2740209  6.1137938   0.372      0.710    
+## enroll      -0.0001976  0.0002152  -0.918      0.359    
+## totcomp      0.0004586  0.0001004   4.570 0.00000649 ***
+## staff        0.0479199  0.0398140   1.204      0.229    
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+## 
+## Residual standard error: 10.24 on 404 degrees of freedom
+## Multiple R-squared:  0.05406,    Adjusted R-squared:  0.04704 
+## F-statistic: 7.697 on 3 and 404 DF,  p-value: 0.00005179
+Q: Compare the robust s.e. estimator to the non-robust s.e. estimator. What do you note regarding differences in standard errors? in t-statistics?
+
+A:There kinda different since that the fact that heteroskedasticity is seen within robust estimators
