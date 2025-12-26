@@ -1,0 +1,407 @@
+---
+title: "Hypothesis Testing 2 Lab"
+author: "Anthony Restivo"
+date: "10/26/2025"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+### the code below will round answers to 5 decimals and make sure output is not in scientific notation format
+knitr::opts_chunk$set(echo = TRUE)
+knitr::knit_hooks$set(inline = function(x) {
+  x <- sprintf("%1.5f", x)
+  paste(x, collapse = ", ")
+})
+options(scipen=999)
+## uncomment and run the line below if you have never installed the stargazer package
+# install.packages("stargazer")
+#install.packages("stats")
+rm(list=ls())
+library(tidyverse)
+library(stargazer)
+library(wooldridge)
+library(stats)
+```
+ <font size="5">
+ 
+# Q0 - Introduction
+We will work with data from a famous survey- the National Longitudinal Survey of Youth (NLSY for short)
+
+Originally, a cohort of 12,686 respondents with ages ranging 14-22 were first interviewed in 1979. This cohort was tracked through time.
+
+From the National Opinions Research Center @ U. Chicago:
+
+> Data collected in these interviews have been of great value to researchers and policy makers concerned with the nation's employment needs. Researchers have used NLSY79 data to look at many topics including: factors that influence a person’s decision to enter or leave the labor force or to re enter it after a period away from work; the effectiveness of various job training programs; links between the migration, schooling, training and work experience of individuals; the ways in which education, social attitudes, and family background affect individual opportunities for employment and advancement.
+
+We will work with a sample from the 1991 survey sent to the cohort.
+
+Consider an economic model that explains an individual's own level of education as a function of their mother's education, their father's education, their own ability, and the tuition rate at college.
+
+$$education=f(\text{mother's education,father's education, ability, tuition})$$
+which we translate into an econometric model:
+$$educ_i=\beta_0+\beta_1 motheduc_i+\beta_2 fatheduc_i+\beta_3 abil_i +\beta_4 abil_i^2 \\ +\beta_5 tuit17_i+\beta_6 tuit18_i+u_i$$
+where:
+
+educ = highest grade completed by 1991
+
+motheduc = mother's highest grade
+
+fatheduc = father's highest grade
+
+abil = measure of ability, not standardized
+
+abil^2 = abil*abil (to allow for particular non-linear relationship)
+
+tuit17 = college tuition at age 17
+
+tuit18 = college tuition at age 18
+
+***
+
+We will use this data to address 3 different questions
+
+**Q1(warmup-two sided hypothesis test)** - Is education linearly related to ability, or is there evidence of a non-linear relationship?
+```{r}
+library(wooldridge)
+data(htv)
+df <- htv
+head(df)
+```
+
+Education is shown to increase while ability increases as well in the time being. Other than ability being shown at a consolidated rate level. 
+
+**Q2(linear combination of parameters)** - Which parent's education has a greater impact on the child's education - the mother or the father, or alternatively is there no difference in effect by sex of the parent?
+```{r}
+library(wooldridge)
+df <- as.data.frame(htv)
+
+model1 <- lm(educ ~ motheduc + fatheduc + abil + I(abil^2) + tuit17 + tuit18, data = df)
+
+model_restricted <- lm(educ ~ I((motheduc + fatheduc)/2) + abil + I(abil^2) + tuit17 + tuit18,
+                       data = df)
+
+anova(model_restricted, model1)
+
+```
+The mother's education has a little more of an impact on the child education. This is evident because we can see that F = 4.038 and p = .0047 less than 0.05 
+**Q3(joint hypothesis test)** - All else equal, do tuition rates matter in determining how much education a person pursues?
+```{r}
+model1 <- lm(educ ~ motheduc + fatheduc + abil + I(abil^2) + tuit17 + tuit18, data = df)
+
+model_restricted_tuit <- lm(educ ~ motheduc + fatheduc + abil + I(abil^2), data = df)
+
+
+anova(model_restricted_tuit, model1)
+
+```
+As we can see from above within the F test we got the p value which is 0.4322 > 0.05. The rates of tuition of student's going into college is shown at ages of 17 and 18 to not indicate a effect on the child's education. 
+
+When ready to proceed, use the "Wooldridge" package to load in the data set "htv" and assign it to an object named "df"
+
+```{r}
+df <- htv
+```
+
+***
+
+# Q1 
+
+$$educ_i=\beta_0+\beta_1 motheduc_i+\beta_2 fatheduc_i+\beta_3 abil_i +\beta_4 abil_i^2 \\ +\beta_5 tuit17+\beta_6 tuit18_i+u_i$$
+
+Test the null hypothesis that education is linearly related to ability against the alternative hypothesis that the relationship is quadratic (a form of non-linearity).
+
+Notice that if $\beta_4 = 0$ the relationship between education and ability is linear:
+
+$$ \frac{\Delta educ}{\Delta abil}=\beta_3$$
+while if $\beta_4$ is different from zero, then the relationship is non-linear (quadratic)
+$$  \frac{\Delta educ}{\Delta abil}=\beta_3+2\beta_4 abil_i$$
+.## Q1A
+State the null and alternative hypothesis for the test above.
+
+Null Hypothesis: $H_O:\beta_4 =0$
+
+Alternative Hypothesis: $H_A: \beta_4 \neq 0$
+
+## Q1B
+Create the non-linear term $abil_i^2$ and store it in a variable named "abilsq"
+```{r}
+df$abilsq <- df$abil * df$abil
+
+df <- df %>% 
+  mutate(abilsq_tv=abil*abil)
+```
+
+
+## Q1C
+Estimate the model discussed above and store the result in an object called "ols1" or similar. Print the results using the summary function rather than stargazer.
+
+
+```{r}
+ols1 <- lm(educ~motheduc+fatheduc+abil+abilsq+tuit17+tuit18,data=df)
+summary(ols1)
+coefs <- ols1 %>% 
+  summary() %>% coefficients()
+pval <- coefs[,4]
+pval[5]
+
+### "rule of thumb" for statistical significance
+## is that if the t-stat is greater than 2
+## variable is significantly different from zero
+## at the 5% confidence level
+```
+## Q1D 
+Reach a conclusion to your hypothesis test in Q1A at the 5\% significance level based on...
+
+i. Comparing the t-statistic to its critical value.
+
+A: At the 5% significance level we reject the null. A t value of 6.082. 
+
+ii. Comparing p-value to $\alpha$.
+
+A: The p-value rejects the null hypothesis. Between both ability and education there is a non-linear in line of the t-statistic test. 
+
+# Q2  
+
+Which parent's education has a greater impact on the child's education - the mother or the father, or alternatively is there no difference in effect by sex of the parent?
+
+$$educ_i=\beta_0+\beta_1 motheduc_i+\beta_2 fatheduc_i+\beta_3 abil_i +\beta_4 abil_i^2 \\ +\beta_5 tuit17_i+\beta_6 tuit18_i+u_i$$
+
+***
+
+Notes on the logic of this test:
+
+If both parent's education have the same impact then $\beta_1 = \beta_2 \rightarrow \beta_1 - \beta_2 = 0$
+
+If mother's education matters more, $\beta_1-\beta_2>0$, and if father's education matters more, $\beta_1-\beta_2<0$.
+
+Hence, we are really curious about whether $\beta_1-\beta_2=0$ or $\beta_1-\beta_2\neq0$.
+
+**Reminder:** due to sampling variation, we cannot simply look at our estimates,$\widehat{\beta}_1$ and $\widehat{\beta}_2$, notice they are different from each other, and conclude either $\beta_1 > \beta_2$ or vice versa.
+
+The appropriate test-statistic, from equation [4.20] in Chapter 4 of Wooldridge, is $$t=\frac{\widehat{\beta}_1 - \widehat{\beta}_2}{se(\widehat{\beta}_1-\widehat{\beta}_2)}$$
+
+The challenge is that the denominator $$se(\widehat{\beta}_1-\widehat{\beta}_2)=se(\widehat{\beta}_1)^2+se(\widehat{\beta}_2)^2+Cov(\widehat{\beta}_1,\widehat{\beta}_2)$$
+We do not have information about $Cov(\widehat{\beta}_1,\widehat{\beta}_2)$ in our regression output table, so we must "reparameterize" the model in order to get the correct standard errors for this test.
+
+## Q2A
+Reparameterize the model to conduct the hypothesis test above regarding comparison of the coefficient on mother's education to the coefficient on father's education.
+
+**Step 1:** Define a new parameter $\alpha_1=\beta_1-\beta_2$.
+
+Notice that if $\alpha_1>0 \rightarrow \beta_1>\beta_2 \rightarrow$ mother's education matters more.
+
+On the other hand, if $\alpha_1<0 \rightarrow \beta_1<\beta_2 \rightarrow$ father's education matters more.
+
+**Step 2:** Solve $\alpha_1=\beta_1-\beta_2$ for $\beta_1$ in terms of $\alpha_1$ and $\beta_2$.
+
+$$\beta_1=\alpha_1+\beta_2$$
+
+**Step 3:** make the substitution $\beta_1=\alpha_1+\beta_2$ wherever you see $\beta_1$ in the model.
+
+$$educ_i=\beta_0+\beta_1 motheduc_i+\beta_2 fatheduc_i+\beta_3 abil_i +\beta_4 abil_i^2 \\ +\beta_5 tuit17_i+\beta_6 tuit18_i+u_i$$
+(making the substitution)
+$$educ_i=\beta_0+(\alpha_1+\beta_2) motheduc_i+\beta_2 fatheduc_i+\beta_3 abil_i +\beta_4 abil_i^2 \\ +\beta_5 tuit17_i+\beta_6 tuit18_i+u_i$$
+(distribute motheduc)
+$$educ_i=\beta_0+\alpha_1 motheduc_i+\beta_2 motheduc+\beta_2 fatheduc_i+\beta_3 abil_i +\beta_4 abil_i^2 \\ +\beta_5 tuit17_i+\beta_6 tuit18_i+u_i$$
+(factor out $\beta_2$)
+$$educ_i=\beta_0+\alpha_1 motheduc_i+\beta_2 ( motheduc+fatheduc_i)+\beta_3 abil_i +\beta_4 abil_i^2 \\ +\beta_5 tuit17_i+\beta_6 tuit18_i+u_i$$
+The equation above is the "reparameterized" model. Notice that it suggests we create a new variable $$tot\_parent\_educ=motheduc+fatheduc$$
+and estimate the model
+$$educ_i=\beta_0+\alpha_1 motheduc_i+\beta_2 tot\_parent\_educ+\beta_3 abil_i +\beta_4 abil_i^2 \\ +\beta_5 tuit17+\beta_6 tuit_18+u_i$$
+
+Think long and hard about $\alpha_1$: it is the impact of increasing mother's education on the child's education, *while holding total parent education and all other variables constant*. 
+
+Hence, if mother's education matters more than father's, if we hold total parent education constant but increase the education of the mother, the child's education should go up, implying $\alpha_1>0$ 
+
+On the other hand, if father's education matters more than mother's, if we hold total parent education constant but increase the education of the mother, the child's education should go *down*, implying $\alpha_1<0$ 
+
+## Q2B
+Create the variable tot_parent_educ
+```{r}
+df$tot_parent_educ <- df$motheduc+df$fatheduc
+
+df <- df %>% 
+  mutate(tot_parent_educ_tv=motheduc+fatheduc)
+```
+
+## Q2C
+Estimate the reparameterized model from Q2A above, store the results in an object named "ols1_reparam" and print them using "summary()".
+```{r}
+ols1_reparam <- lm(educ~motheduc+tot_parent_educ+abil+abilsq+tuit17+tuit18,data=df) 
+
+ols1_reparam %>% summary()
+```
+## Q2D
+Look at $\widehat{\alpha_1}$ from your estimates. Based on the sign of this estimate, which parent's education seems to matter more?
+
+A: The estimate for moms education is higher than what the father's education. The coefficient that represents the mother's education is more. 
+
+## Q2E
+Formally test the hypothesis that $\alpha_1=0$ against the 2-sided alternative that $\alpha_1\neq0$ at the 5% significance level.
+
+Reach a conclusion to the question based on...
+
+Both land on the same conclusion which the moms education affects the child at the 5% significance level. 
+
+i. Comparing the t-statistic to its critical value.
+
+A: 6.845 > 1.96 we reject the null
+
+ii. Comparing the p-value on the t-statistic to the significance level.
+
+A: p value < 0.05 we reject the null
+
+# Q3
+$$educ_i=\beta_0+\beta_1 motheduc_i+\beta_2 fatheduc_i+\beta_3 abil_i +\beta_4 abil_i^2 \\ +\beta_5 tuit17_i+\beta_6 tuit18_i+u_i$$
+All else equal, do tuition rates matter in determining how much education a person pursues?
+
+Note - we might be curious, after controlling for the individual's ability, and their parent's levels of education, whether tuition rates jointly matter in explaining an individual's level of education (specifically, think about how this might matter for whether they pursue education after grade 12.).
+
+Notice that tuit17 and tuit18 are tuition rates at the period of time when the individual is likely to be making decisions as to whether to pursue higher education, namely when they are 17/18 years old. 
+
+## Q3A
+Let's conduct a test that tuit17 and tuit18 are "jointly significant".
+
+Specify the null hypothesis that tuition at age 17 and tuition at age 18 do not explain the level of education, and the appropriate alternative hypothesis for this **multiple hypotheses test**.
+
+A:
+Null hypothesis $H_O:\beta_5=\beta_6=0$
+
+Alternative hypothesis $H_A:H_O\;\text{is false}$ 
+
+
+(definition)**restricted model:** model that results from imposing the null hypothesis, has fewer parameters than the *unrestricted model*. 
+
+In this case, the restricted model is:
+$$educ_i=\beta_0+\beta_1 motheduc_i+\beta_2 fatheduc_i+\beta_3 abil_i +\beta_4 abil_i^2 +u_i$$
+
+(definition)**unrestricted model:** the model without restrictions placed on the parameters.
+
+In this case, the unrestricted model is: 
+$$educ_i=\beta_0+\beta_1 motheduc_i+\beta_2 fatheduc_i+\beta_3 abil_i +\beta_4 abil_i^2 \\ +\beta_5 tuit17_i+\beta_6 tuit18_i+u_i$$
+
+## Q3B
+
+The **test-statistic** for a joint hypothesis test is the "F" statistic where $$ F \equiv \frac{(SSR_r-SSR_{ur})/q}{SSR_{ur}/(n-k-1)}$$
+where:
+
+$SSR_r$ is the sum of squared residuals (SSR) from the *restricted model* where we impose the null hypothesis
+
+$SSR_{ur}$ is the SSR from the *unrestricted model*
+
+q is the number of "exclusion restrictions", e.g. the number of variables we are testing to exclude from the model.
+
+(n-k-1) is the degrees of freedom in the *unrestricted model* (=# observations - k slope parameters - intercept parameter)
+
+***
+**intuition regarding the F test**
+
+$(SSR_r-SSR_{ur})$ tells us how much bigger the residuals are, in total, in the model where the null hypothesis is true.
+
+If the residuals are indeed bigger after imposing these restrictions, we would question the validity of the null hypothesis, as the larger residuals imply that imposing the restriction results in a worse fit. The larger these residuals, the larger the F statistic, and the more evidence we have against the null hypothesis.
+
+On the contrary, if the variables being excluded indeed have no explanatory power, then $(SSR_r-SSR_{ur})$ will be ``small" in the statistical sense, and the less evidence we have against the null hypothesis.
+
+***
+
+Estimate the restricted model, store the results in an object named "ols1_r" where the "r" is for restricted. Print the output using the "summary()" function.
+
+```{r}
+ols1_r <- lm(educ~motheduc+fatheduc+abil+abilsq,data=df) 
+ols1_r %>% 
+  summary()
+```
+
+## Q3C
+Calculate the $SSR_r$, $SSR_{ur}$, and the F statistic by using the sum() and resid() functions in R.
+
+```{r}
+ssr_r <- sum(resid(ols1_r)^2) 
+ssr_ur <- sum(resid(ols1)^2)
+q <- 2 
+
+df_ur <- summary(ols1)$df[2]
+
+f_stat <- ((ssr_r-ssr_ur)/q)/(ssr_ur/df_ur)
+f_stat
+```
+A: The F statistic is 0.8393289 
+The ssr_r value is 3785.24261618815
+The ssr_ur value is 3780.05421284023
+
+## Q3D
+Find the critical value of the F distribution (at the 5% significance level) using the "qf" function. 
+
+Hints- 
+for "df1" use the number of exclusion restrictions q
+for "df2" use the degrees of freedom for the unrestricted model 
+
+```{r}
+alpha=0.05
+crit_f <- qf(1-alpha,q,df_ur)
+crit_f
+```
+A: The critical value for the F distribution with df1 = 2.00000 and df2 = 1223.00000 at the $\alpha=0.05$ level of significance is 3.00308
+
+## Q3E
+Find the p-value associated with the F statistic you calculate in Q3C. Interpret this p-value.
+
+Hint- use the "pf" function. You want the area under the distribution to the right of your calculated F statistic, so use the option "lower.tail=F". If you leave the default option, this will return the area to the left of your calculated F statistic, which is not what you want!  
+```{r}
+p_val <- pf(f_stat,q,df_ur,lower.tail = F)
+p_val
+```
+A: 0.432249
+
+## Q3F
+Reach a conclusion to your multiple hypotheses test in Q3A (at the 5% significance level) by...
+
+i. Comparing your calculated F statistic in Q3C to its critical value from Q3D.
+
+A: The F-stat = 0.83933 is less than 3.00308, therefore we fail to reject the null hypothesis. 
+
+ii. Comparing the p-value on your F statistic from Q3E to the significance level.
+
+A:In addition the p-value 0.432249 is larger than the 0.05, in result we can conclude that ages 17 and 18 show no effect on their education. 
+
+## Q4
+$$educ_i=\beta_0+\beta_1 motheduc_i+\beta_2 fatheduc_i+\beta_3 abil_i +\beta_4 abil_i^2 \\ +\beta_5 tuit17_i+\beta_6 tuit18_i+u_i$$
+
+Repeat the process in Q3 to do an "overall" significance test of the regression model. 
+
+In other words, test that $\beta_1=\beta_2=\beta_3=\beta_4=\beta_5=\beta_6=0$ against an alternative that at least one of the $\beta_j \neq 0$ (i.e. at least one coefficient is different from zero). See section 4-5e of Wooldridge for general guidance.
+
+Show your work/code to: calculate the F-statistic, find the critical value of the F statistic, find the p-value of your calculated F-statistic, and discuss your conclusions regarding the overall significance test at the 5% significance level, along with how you reach those conclusions. 
+
+Hint- to run a regression on only an intercept, $y=\beta_0+u$, the appropriate command is "lm(y~1, data=df)" 
+```{r}
+library(wooldridge)
+df <- as.data.frame(htv)
+
+if(! "abilsq" %in% names(df)) df$abilsq <- df$abil * df$abil
+
+ur_model <- lm(educ ~ motheduc + fatheduc + abil + abilsq + tuit17 + tuit18, data = df)
+
+r_model <- lm(educ ~ 1, data = df)
+
+RSS_r <- sum(resid(r_model)^2)
+RSS_u <- sum(resid(ur_model)^2)
+
+q <- length(coef(ur_model)) - 1   
+
+df_ur <- ur_model$df.residual     
+
+F_stat <- ((RSS_r - RSS_u) / q) / (RSS_u / df_ur)
+F_stat
+
+alpha <- 0.05
+crit_f <- qf(1 - alpha, q, df_ur)
+crit_f
+
+p_val <- pf(F_stat, q, df_ur, lower.tail = FALSE)
+p_val
+
+```
+A:We reject the null and one of the independent variables is in the affect of education being the 163.5079. 
+
+</font>

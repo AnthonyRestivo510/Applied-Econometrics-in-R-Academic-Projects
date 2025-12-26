@@ -1,0 +1,668 @@
+﻿<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html><head></head><body>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="container-fluid main-container">
+
+
+
+
+<div>
+
+
+
+<h1 class="title toc-ignore">Hypothesis Testing 2 Lab</h1>
+<h4 class="author">Anthony Restivo</h4>
+<h4 class="date">10/26/2025</h4>
+
+</div>
+
+
+<p><font size="5"></font></p><font size="5">
+<div class="section level1">
+<h1>Q0 - Introduction</h1>
+<p>We will work with data from a famous survey- the National
+Longitudinal Survey of Youth (NLSY for short)</p>
+<p>Originally, a cohort of 12,686 respondents with ages ranging 14-22
+were first interviewed in 1979. This cohort was tracked through
+time.</p>
+<p>From the National Opinions Research Center @ U. Chicago:</p>
+<blockquote>
+<p>Data collected in these interviews have been of great value to
+researchers and policy makers concerned with the nation’s employment
+needs. Researchers have used NLSY79 data to look at many topics
+including: factors that influence a person’s decision to enter or leave
+the labor force or to re enter it after a period away from work; the
+effectiveness of various job training programs; links between the
+migration, schooling, training and work experience of individuals; the
+ways in which education, social attitudes, and family background affect
+individual opportunities for employment and advancement.</p>
+</blockquote>
+<p>We will work with a sample from the 1991 survey sent to the
+cohort.</p>
+<p>Consider an economic model that explains an individual’s own level of
+education as a function of their mother’s education, their father’s
+education, their own ability, and the tuition rate at college.</p>
+<p><span class="math display">\[education=f(\text{mother&#39;s
+education,father&#39;s education, ability, tuition})\]</span> which we
+translate into an econometric model: <span class="math display">\[educ_i=\beta_0+\beta_1 motheduc_i+\beta_2
+fatheduc_i+\beta_3 abil_i +\beta_4 abil_i^2 \\ +\beta_5 tuit17_i+\beta_6
+tuit18_i+u_i\]</span> where:</p>
+<p>educ = highest grade completed by 1991</p>
+<p>motheduc = mother’s highest grade</p>
+<p>fatheduc = father’s highest grade</p>
+<p>abil = measure of ability, not standardized</p>
+<p>abil^2 = abil*abil (to allow for particular non-linear
+relationship)</p>
+<p>tuit17 = college tuition at age 17</p>
+<p>tuit18 = college tuition at age 18</p>
+<hr/>
+<p>We will use this data to address 3 different questions</p>
+<p><strong>Q1(warmup-two sided hypothesis test)</strong> - Is education
+linearly related to ability, or is there evidence of a non-linear
+relationship?</p>
+<pre class="r"><code>library(wooldridge)
+data(htv)
+df &lt;- htv
+head(df)</code></pre>
+<pre><code>##        wage     abil educ ne nc west south exper motheduc fatheduc brkhme14
+## 1 12.019231 5.027738   15  0  0    1     0     9       12       12        0
+## 2  8.912656 2.037170   13  1  0    0     0     8       12       10        1
+## 3 15.514334 2.475895   15  1  0    0     0    11       12       16        0
+## 4 13.333333 3.609240   15  1  0    0     0     6       12       12        0
+## 5 11.070110 2.636546   13  1  0    0     0    15       12       15        1
+## 6 17.482517 3.474334   18  1  0    0     0     8       12       12        0
+##   sibs urban ne18 nc18 south18 west18 urban18   tuit17    tuit18    lwage
+## 1    1     1    1    0       0      0       1 7.582914  7.260242 2.486508
+## 2    4     1    1    0       0      0       1 8.595144  9.499537 2.187472
+## 3    2     1    1    0       0      0       1 7.311346  7.311346 2.741764
+## 4    1     1    1    0       0      0       1 9.499537 10.162070 2.590267
+## 5    2     1    1    0       0      0       1 7.311346  7.311346 2.404249
+## 6    2     1    1    0       0      0       1 7.311346  7.311346 2.861201
+##   expersq      ctuit
+## 1      81 -0.3226714
+## 2      64  0.9043922
+## 3     121  0.0000000
+## 4      36  0.6625338
+## 5     225  0.0000000
+## 6      64  0.0000000</code></pre>
+<p>Education is shown to increase while ability increases as well in the
+time being. Other than ability being shown at a consolidated rate
+level.</p>
+<p><strong>Q2(linear combination of parameters)</strong> - Which
+parent’s education has a greater impact on the child’s education - the
+mother or the father, or alternatively is there no difference in effect
+by sex of the parent?</p>
+<pre class="r"><code>library(wooldridge)
+df &lt;- as.data.frame(htv)
+
+model1 &lt;- lm(educ ~ motheduc + fatheduc + abil + I(abil^2) + tuit17 + tuit18, data = df)
+
+model_restricted &lt;- lm(educ ~ I((motheduc + fatheduc)/2) + abil + I(abil^2) + tuit17 + tuit18,
+                       data = df)
+
+anova(model_restricted, model1)</code></pre>
+<pre><code>## Analysis of Variance Table
+## 
+## Model 1: educ ~ I((motheduc + fatheduc)/2) + abil + I(abil^2) + tuit17 + 
+##     tuit18
+## Model 2: educ ~ motheduc + fatheduc + abil + I(abil^2) + tuit17 + tuit18
+##   Res.Df    RSS Df Sum of Sq      F  Pr(&gt;F)  
+## 1   1224 3792.5                              
+## 2   1223 3780.1  1    12.479 4.0375 0.04472 *
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1</code></pre>
+<p>The mother’s education has a little more of an impact on the child
+education. This is evident because we can see that F = 4.038 and p =
+.0047 less than 0.05 <strong>Q3(joint hypothesis test)</strong> - All
+else equal, do tuition rates matter in determining how much education a
+person pursues?</p>
+<pre class="r"><code>model1 &lt;- lm(educ ~ motheduc + fatheduc + abil + I(abil^2) + tuit17 + tuit18, data = df)
+
+model_restricted_tuit &lt;- lm(educ ~ motheduc + fatheduc + abil + I(abil^2), data = df)
+
+
+anova(model_restricted_tuit, model1)</code></pre>
+<pre><code>## Analysis of Variance Table
+## 
+## Model 1: educ ~ motheduc + fatheduc + abil + I(abil^2)
+## Model 2: educ ~ motheduc + fatheduc + abil + I(abil^2) + tuit17 + tuit18
+##   Res.Df    RSS Df Sum of Sq      F Pr(&gt;F)
+## 1   1225 3785.2                           
+## 2   1223 3780.1  2    5.1884 0.8393 0.4322</code></pre>
+<p>As we can see from above within the F test we got the p value which
+is 0.4322 &gt; 0.05. The rates of tuition of student’s going into
+college is shown at ages of 17 and 18 to not indicate a effect on the
+child’s education.</p>
+<p>When ready to proceed, use the “Wooldridge” package to load in the
+data set “htv” and assign it to an object named “df”</p>
+<pre class="r"><code>df &lt;- htv</code></pre>
+<hr/>
+</div>
+<div class="section level1">
+<h1>Q1</h1>
+<p><span class="math display">\[educ_i=\beta_0+\beta_1
+motheduc_i+\beta_2 fatheduc_i+\beta_3 abil_i +\beta_4 abil_i^2 \\
++\beta_5 tuit17+\beta_6 tuit18_i+u_i\]</span></p>
+<p>Test the null hypothesis that education is linearly related to
+ability against the alternative hypothesis that the relationship is
+quadratic (a form of non-linearity).</p>
+<p>Notice that if <span class="math inline">\(\beta_4 = 0\)</span> the
+relationship between education and ability is linear:</p>
+<p><span class="math display">\[ \frac{\Delta educ}{\Delta
+abil}=\beta_3\]</span> while if <span class="math inline">\(\beta_4\)</span> is different from zero, then the
+relationship is non-linear (quadratic) <span class="math display">\[  \frac{\Delta educ}{\Delta
+abil}=\beta_3+2\beta_4 abil_i\]</span> .## Q1A State the null and
+alternative hypothesis for the test above.</p>
+<p>Null Hypothesis: <span class="math inline">\(H_O:\beta_4
+=0\)</span></p>
+<p>Alternative Hypothesis: <span class="math inline">\(H_A: \beta_4 \neq
+0\)</span></p>
+<div class="section level2">
+<h2>Q1B</h2>
+<p>Create the non-linear term <span class="math inline">\(abil_i^2\)</span> and store it in a variable named
+“abilsq”</p>
+<pre class="r"><code>df$abilsq &lt;- df$abil * df$abil
+
+df &lt;- df %&gt;% 
+  mutate(abilsq_tv=abil*abil)</code></pre>
+</div>
+<div class="section level2">
+<h2>Q1C</h2>
+<p>Estimate the model discussed above and store the result in an object
+called “ols1” or similar. Print the results using the summary function
+rather than stargazer.</p>
+<pre class="r"><code>ols1 &lt;- lm(educ~motheduc+fatheduc+abil+abilsq+tuit17+tuit18,data=df)
+summary(ols1)</code></pre>
+<pre><code>## 
+## Call:
+## lm(formula = educ ~ motheduc + fatheduc + abil + abilsq + tuit17 + 
+##     tuit18, data = df)
+## 
+## Residuals:
+##    Min     1Q Median     3Q    Max 
+## -5.148 -1.161 -0.114  1.032  7.071 
+## 
+## Coefficients:
+##               Estimate Std. Error t value             Pr(&gt;|t|)    
+## (Intercept) 8.08186473 0.31276849  25.840 &lt; 0.0000000000000002 ***
+## motheduc    0.19289246 0.02818040   6.845      0.0000000000121 ***
+## fatheduc    0.10844274 0.01961801   5.528      0.0000000396225 ***
+## abil        0.39904259 0.03034927  13.148 &lt; 0.0000000000000002 ***
+## abilsq      0.05055447 0.00831261   6.082      0.0000000015878 ***
+## tuit17      0.01575878 0.06250291   0.252                0.801    
+## tuit18      0.00006033 0.06364770   0.001                0.999    
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## Residual standard error: 1.758 on 1223 degrees of freedom
+## Multiple R-squared:  0.4451, Adjusted R-squared:  0.4424 
+## F-statistic: 163.5 on 6 and 1223 DF,  p-value: &lt; 0.00000000000000022</code></pre>
+<pre class="r"><code>coefs &lt;- ols1 %&gt;% 
+  summary() %&gt;% coefficients()
+pval &lt;- coefs[,4]
+pval[5]</code></pre>
+<pre><code>##            abilsq 
+## 0.000000001587772</code></pre>
+<pre class="r"><code>### &quot;rule of thumb&quot; for statistical significance
+## is that if the t-stat is greater than 2
+## variable is significantly different from zero
+## at the 5% confidence level</code></pre>
+</div>
+<div class="section level2">
+<h2>Q1D</h2>
+<p>Reach a conclusion to your hypothesis test in Q1A at the 5%
+significance level based on…</p>
+<ol style="list-style-type: lower-roman;">
+<li>Comparing the t-statistic to its critical value.</li>
+</ol>
+<p>A: At the 5% significance level we reject the null. A t value of
+6.082.</p>
+<ol start="2" style="list-style-type: lower-roman;">
+<li>Comparing p-value to <span class="math inline">\(\alpha\)</span>.</li>
+</ol>
+<p>A: The p-value rejects the null hypothesis. Between both ability and
+education there is a non-linear in line of the t-statistic test.</p>
+</div>
+</div>
+<div class="section level1">
+<h1>Q2</h1>
+<p>Which parent’s education has a greater impact on the child’s
+education - the mother or the father, or alternatively is there no
+difference in effect by sex of the parent?</p>
+<p><span class="math display">\[educ_i=\beta_0+\beta_1
+motheduc_i+\beta_2 fatheduc_i+\beta_3 abil_i +\beta_4 abil_i^2 \\
++\beta_5 tuit17_i+\beta_6 tuit18_i+u_i\]</span></p>
+<hr/>
+<p>Notes on the logic of this test:</p>
+<p>If both parent’s education have the same impact then <span class="math inline">\(\beta_1 = \beta_2 \rightarrow \beta_1 - \beta_2 =
+0\)</span></p>
+<p>If mother’s education matters more, <span class="math inline">\(\beta_1-\beta_2&gt;0\)</span>, and if father’s
+education matters more, <span class="math inline">\(\beta_1-\beta_2&lt;0\)</span>.</p>
+<p>Hence, we are really curious about whether <span class="math inline">\(\beta_1-\beta_2=0\)</span> or <span class="math inline">\(\beta_1-\beta_2\neq0\)</span>.</p>
+<p><strong>Reminder:</strong> due to sampling variation, we cannot
+simply look at our estimates,<span class="math inline">\(\widehat{\beta}_1\)</span> and <span class="math inline">\(\widehat{\beta}_2\)</span>, notice they are
+different from each other, and conclude either <span class="math inline">\(\beta_1 &gt; \beta_2\)</span> or vice versa.</p>
+<p>The appropriate test-statistic, from equation [4.20] in Chapter 4 of
+Wooldridge, is <span class="math display">\[t=\frac{\widehat{\beta}_1 -
+\widehat{\beta}_2}{se(\widehat{\beta}_1-\widehat{\beta}_2)}\]</span></p>
+<p>The challenge is that the denominator <span class="math display">\[se(\widehat{\beta}_1-\widehat{\beta}_2)=se(\widehat{\beta}_1)^2+se(\widehat{\beta}_2)^2+Cov(\widehat{\beta}_1,\widehat{\beta}_2)\]</span>
+We do not have information about <span class="math inline">\(Cov(\widehat{\beta}_1,\widehat{\beta}_2)\)</span>
+in our regression output table, so we must “reparameterize” the model in
+order to get the correct standard errors for this test.</p>
+<div class="section level2">
+<h2>Q2A</h2>
+<p>Reparameterize the model to conduct the hypothesis test above
+regarding comparison of the coefficient on mother’s education to the
+coefficient on father’s education.</p>
+<p><strong>Step 1:</strong> Define a new parameter <span class="math inline">\(\alpha_1=\beta_1-\beta_2\)</span>.</p>
+<p>Notice that if <span class="math inline">\(\alpha_1&gt;0 \rightarrow
+\beta_1&gt;\beta_2 \rightarrow\)</span> mother’s education matters
+more.</p>
+<p>On the other hand, if <span class="math inline">\(\alpha_1&lt;0
+\rightarrow \beta_1&lt;\beta_2 \rightarrow\)</span> father’s education
+matters more.</p>
+<p><strong>Step 2:</strong> Solve <span class="math inline">\(\alpha_1=\beta_1-\beta_2\)</span> for <span class="math inline">\(\beta_1\)</span> in terms of <span class="math inline">\(\alpha_1\)</span> and <span class="math inline">\(\beta_2\)</span>.</p>
+<p><span class="math display">\[\beta_1=\alpha_1+\beta_2\]</span></p>
+<p><strong>Step 3:</strong> make the substitution <span class="math inline">\(\beta_1=\alpha_1+\beta_2\)</span> wherever you see
+<span class="math inline">\(\beta_1\)</span> in the model.</p>
+<p><span class="math display">\[educ_i=\beta_0+\beta_1
+motheduc_i+\beta_2 fatheduc_i+\beta_3 abil_i +\beta_4 abil_i^2 \\
++\beta_5 tuit17_i+\beta_6 tuit18_i+u_i\]</span> (making the
+substitution) <span class="math display">\[educ_i=\beta_0+(\alpha_1+\beta_2)
+motheduc_i+\beta_2 fatheduc_i+\beta_3 abil_i +\beta_4 abil_i^2 \\
++\beta_5 tuit17_i+\beta_6 tuit18_i+u_i\]</span> (distribute motheduc)
+<span class="math display">\[educ_i=\beta_0+\alpha_1 motheduc_i+\beta_2
+motheduc+\beta_2 fatheduc_i+\beta_3 abil_i +\beta_4 abil_i^2 \\ +\beta_5
+tuit17_i+\beta_6 tuit18_i+u_i\]</span> (factor out <span class="math inline">\(\beta_2\)</span>) <span class="math display">\[educ_i=\beta_0+\alpha_1 motheduc_i+\beta_2 (
+motheduc+fatheduc_i)+\beta_3 abil_i +\beta_4 abil_i^2 \\ +\beta_5
+tuit17_i+\beta_6 tuit18_i+u_i\]</span> The equation above is the
+“reparameterized” model. Notice that it suggests we create a new
+variable <span class="math display">\[tot\_parent\_educ=motheduc+fatheduc\]</span> and
+estimate the model <span class="math display">\[educ_i=\beta_0+\alpha_1
+motheduc_i+\beta_2 tot\_parent\_educ+\beta_3 abil_i +\beta_4 abil_i^2 \\
++\beta_5 tuit17+\beta_6 tuit_18+u_i\]</span></p>
+<p>Think long and hard about <span class="math inline">\(\alpha_1\)</span>: it is the impact of increasing
+mother’s education on the child’s education, <em>while holding total
+parent education and all other variables constant</em>.</p>
+<p>Hence, if mother’s education matters more than father’s, if we hold
+total parent education constant but increase the education of the
+mother, the child’s education should go up, implying <span class="math inline">\(\alpha_1&gt;0\)</span></p>
+<p>On the other hand, if father’s education matters more than mother’s,
+if we hold total parent education constant but increase the education of
+the mother, the child’s education should go <em>down</em>, implying
+<span class="math inline">\(\alpha_1&lt;0\)</span></p>
+</div>
+<div class="section level2">
+<h2>Q2B</h2>
+<p>Create the variable tot_parent_educ</p>
+<pre class="r"><code>df$tot_parent_educ &lt;- df$motheduc+df$fatheduc
+
+df &lt;- df %&gt;% 
+  mutate(tot_parent_educ_tv=motheduc+fatheduc)</code></pre>
+</div>
+<div class="section level2">
+<h2>Q2C</h2>
+<p>Estimate the reparameterized model from Q2A above, store the results
+in an object named “ols1_reparam” and print them using “summary()”.</p>
+<pre class="r"><code>ols1_reparam &lt;- lm(educ~motheduc+tot_parent_educ+abil+abilsq+tuit17+tuit18,data=df) 
+
+ols1_reparam %&gt;% summary()</code></pre>
+<pre><code>## 
+## Call:
+## lm(formula = educ ~ motheduc + tot_parent_educ + abil + abilsq + 
+##     tuit17 + tuit18, data = df)
+## 
+## Residuals:
+##    Min     1Q Median     3Q    Max 
+## -5.148 -1.161 -0.114  1.032  7.071 
+## 
+## Coefficients:
+##                   Estimate Std. Error t value             Pr(&gt;|t|)    
+## (Intercept)     8.08186473 0.31276849  25.840 &lt; 0.0000000000000002 ***
+## motheduc        0.08444972 0.04202855   2.009               0.0447 *  
+## tot_parent_educ 0.10844274 0.01961801   5.528        0.00000003962 ***
+## abil            0.39904259 0.03034927  13.148 &lt; 0.0000000000000002 ***
+## abilsq          0.05055447 0.00831261   6.082        0.00000000159 ***
+## tuit17          0.01575878 0.06250291   0.252               0.8010    
+## tuit18          0.00006033 0.06364770   0.001               0.9992    
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## Residual standard error: 1.758 on 1223 degrees of freedom
+## Multiple R-squared:  0.4451, Adjusted R-squared:  0.4424 
+## F-statistic: 163.5 on 6 and 1223 DF,  p-value: &lt; 0.00000000000000022</code></pre>
+</div>
+<div class="section level2">
+<h2>Q2D</h2>
+<p>Look at <span class="math inline">\(\widehat{\alpha_1}\)</span> from
+your estimates. Based on the sign of this estimate, which parent’s
+education seems to matter more?</p>
+<p>A: The estimate for moms education is higher than what the father’s
+education. The coefficient that represents the mother’s education is
+more.</p>
+</div>
+<div class="section level2">
+<h2>Q2E</h2>
+<p>Formally test the hypothesis that <span class="math inline">\(\alpha_1=0\)</span> against the 2-sided
+alternative that <span class="math inline">\(\alpha_1\neq0\)</span> at
+the 5% significance level.</p>
+<p>Reach a conclusion to the question based on…</p>
+<p>Both land on the same conclusion which the moms education affects the
+child at the 5% significance level.</p>
+<ol style="list-style-type: lower-roman;">
+<li>Comparing the t-statistic to its critical value.</li>
+</ol>
+<p>A: 6.845 &gt; 1.96 we reject the null</p>
+<ol start="2" style="list-style-type: lower-roman;">
+<li>Comparing the p-value on the t-statistic to the significance
+level.</li>
+</ol>
+<p>A: p value &lt; 0.05 we reject the null</p>
+</div>
+</div>
+<div class="section level1">
+<h1>Q3</h1>
+<p><span class="math display">\[educ_i=\beta_0+\beta_1
+motheduc_i+\beta_2 fatheduc_i+\beta_3 abil_i +\beta_4 abil_i^2 \\
++\beta_5 tuit17_i+\beta_6 tuit18_i+u_i\]</span> All else equal, do
+tuition rates matter in determining how much education a person
+pursues?</p>
+<p>Note - we might be curious, after controlling for the individual’s
+ability, and their parent’s levels of education, whether tuition rates
+jointly matter in explaining an individual’s level of education
+(specifically, think about how this might matter for whether they pursue
+education after grade 12.).</p>
+<p>Notice that tuit17 and tuit18 are tuition rates at the period of time
+when the individual is likely to be making decisions as to whether to
+pursue higher education, namely when they are 17/18 years old.</p>
+<div class="section level2">
+<h2>Q3A</h2>
+<p>Let’s conduct a test that tuit17 and tuit18 are “jointly
+significant”.</p>
+<p>Specify the null hypothesis that tuition at age 17 and tuition at age
+18 do not explain the level of education, and the appropriate
+alternative hypothesis for this <strong>multiple hypotheses
+test</strong>.</p>
+<p>A: Null hypothesis <span class="math inline">\(H_O:\beta_5=\beta_6=0\)</span></p>
+<p>Alternative hypothesis <span class="math inline">\(H_A:H_O\;\text{is
+false}\)</span></p>
+<p>(definition)<strong>restricted model:</strong> model that results
+from imposing the null hypothesis, has fewer parameters than the
+<em>unrestricted model</em>.</p>
+<p>In this case, the restricted model is: <span class="math display">\[educ_i=\beta_0+\beta_1 motheduc_i+\beta_2
+fatheduc_i+\beta_3 abil_i +\beta_4 abil_i^2 +u_i\]</span></p>
+<p>(definition)<strong>unrestricted model:</strong> the model without
+restrictions placed on the parameters.</p>
+<p>In this case, the unrestricted model is: <span class="math display">\[educ_i=\beta_0+\beta_1 motheduc_i+\beta_2
+fatheduc_i+\beta_3 abil_i +\beta_4 abil_i^2 \\ +\beta_5 tuit17_i+\beta_6
+tuit18_i+u_i\]</span></p>
+</div>
+<div class="section level2">
+<h2>Q3B</h2>
+<p>The <strong>test-statistic</strong> for a joint hypothesis test is
+the “F” statistic where <span class="math display">\[ F \equiv
+\frac{(SSR_r-SSR_{ur})/q}{SSR_{ur}/(n-k-1)}\]</span> where:</p>
+<p><span class="math inline">\(SSR_r\)</span> is the sum of squared
+residuals (SSR) from the <em>restricted model</em> where we impose the
+null hypothesis</p>
+<p><span class="math inline">\(SSR_{ur}\)</span> is the SSR from the
+<em>unrestricted model</em></p>
+<p>q is the number of “exclusion restrictions”, e.g.&#160;the number of
+variables we are testing to exclude from the model.</p>
+<p>(n-k-1) is the degrees of freedom in the <em>unrestricted model</em>
+(=# observations - k slope parameters - intercept parameter)</p>
+<hr/>
+<p><strong>intuition regarding the F test</strong></p>
+<p><span class="math inline">\((SSR_r-SSR_{ur})\)</span> tells us how
+much bigger the residuals are, in total, in the model where the null
+hypothesis is true.</p>
+<p>If the residuals are indeed bigger after imposing these restrictions,
+we would question the validity of the null hypothesis, as the larger
+residuals imply that imposing the restriction results in a worse fit.
+The larger these residuals, the larger the F statistic, and the more
+evidence we have against the null hypothesis.</p>
+<p>On the contrary, if the variables being excluded indeed have no
+explanatory power, then <span class="math inline">\((SSR_r-SSR_{ur})\)</span> will be ``small” in the
+statistical sense, and the less evidence we have against the null
+hypothesis.</p>
+<hr/>
+<p>Estimate the restricted model, store the results in an object named
+“ols1_r” where the “r” is for restricted. Print the output using the
+“summary()” function.</p>
+<pre class="r"><code>ols1_r &lt;- lm(educ~motheduc+fatheduc+abil+abilsq,data=df) 
+ols1_r %&gt;% 
+  summary()</code></pre>
+<pre><code>## 
+## Call:
+## lm(formula = educ ~ motheduc + fatheduc + abil + abilsq, data = df)
+## 
+## Residuals:
+##     Min      1Q  Median      3Q     Max 
+## -5.2506 -1.1274 -0.1355  1.0223  7.0482 
+## 
+## Coefficients:
+##             Estimate Std. Error t value             Pr(&gt;|t|)    
+## (Intercept) 8.240226   0.287410  28.671 &lt; 0.0000000000000002 ***
+## motheduc    0.190126   0.028096   6.767      0.0000000000203 ***
+## fatheduc    0.108939   0.019601   5.558      0.0000000335119 ***
+## abil        0.401462   0.030288  13.255 &lt; 0.0000000000000002 ***
+## abilsq      0.050599   0.008304   6.093      0.0000000014781 ***
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## Residual standard error: 1.758 on 1225 degrees of freedom
+## Multiple R-squared:  0.4444, Adjusted R-squared:  0.4425 
+## F-statistic: 244.9 on 4 and 1225 DF,  p-value: &lt; 0.00000000000000022</code></pre>
+</div>
+<div class="section level2">
+<h2>Q3C</h2>
+<p>Calculate the <span class="math inline">\(SSR_r\)</span>, <span class="math inline">\(SSR_{ur}\)</span>, and the F statistic by using
+the sum() and resid() functions in R.</p>
+<pre class="r"><code>ssr_r &lt;- sum(resid(ols1_r)^2) 
+ssr_ur &lt;- sum(resid(ols1)^2)
+q &lt;- 2 
+
+df_ur &lt;- summary(ols1)$df[2]
+
+f_stat &lt;- ((ssr_r-ssr_ur)/q)/(ssr_ur/df_ur)
+f_stat</code></pre>
+<pre><code>## [1] 0.8393289</code></pre>
+<p>A: The F statistic is 0.8393289 The ssr_r value is 3785.24261618815
+The ssr_ur value is 3780.05421284023</p>
+</div>
+<div class="section level2">
+<h2>Q3D</h2>
+<p>Find the critical value of the F distribution (at the 5% significance
+level) using the “qf” function.</p>
+<p>Hints- for “df1” use the number of exclusion restrictions q for “df2”
+use the degrees of freedom for the unrestricted model</p>
+<pre class="r"><code>alpha=0.05
+crit_f &lt;- qf(1-alpha,q,df_ur)
+crit_f</code></pre>
+<pre><code>## [1] 3.003082</code></pre>
+<p>A: The critical value for the F distribution with df1 = 2.00000 and
+df2 = 1223.00000 at the <span class="math inline">\(\alpha=0.05\)</span>
+level of significance is 3.00308</p>
+</div>
+<div class="section level2">
+<h2>Q3E</h2>
+<p>Find the p-value associated with the F statistic you calculate in
+Q3C. Interpret this p-value.</p>
+<p>Hint- use the “pf” function. You want the area under the distribution
+to the right of your calculated F statistic, so use the option
+“lower.tail=F”. If you leave the default option, this will return the
+area to the left of your calculated F statistic, which is not what you
+want!</p>
+<pre class="r"><code>p_val &lt;- pf(f_stat,q,df_ur,lower.tail = F)
+p_val</code></pre>
+<pre><code>## [1] 0.432249</code></pre>
+<p>A: 0.432249</p>
+</div>
+<div class="section level2">
+<h2>Q3F</h2>
+<p>Reach a conclusion to your multiple hypotheses test in Q3A (at the 5%
+significance level) by…</p>
+<ol style="list-style-type: lower-roman;">
+<li>Comparing your calculated F statistic in Q3C to its critical value
+from Q3D.</li>
+</ol>
+<p>A: The F-stat = 0.83933 is less than 3.00308, therefore we fail to
+reject the null hypothesis.</p>
+<ol start="2" style="list-style-type: lower-roman;">
+<li>Comparing the p-value on your F statistic from Q3E to the
+significance level.</li>
+</ol>
+<p>A:In addition the p-value 0.432249 is larger than the 0.05, in result
+we can conclude that ages 17 and 18 show no effect on their
+education.</p>
+</div>
+<div class="section level2">
+<h2>Q4</h2>
+<p><span class="math display">\[educ_i=\beta_0+\beta_1
+motheduc_i+\beta_2 fatheduc_i+\beta_3 abil_i +\beta_4 abil_i^2 \\
++\beta_5 tuit17_i+\beta_6 tuit18_i+u_i\]</span></p>
+<p>Repeat the process in Q3 to do an “overall” significance test of the
+regression model.</p>
+<p>In other words, test that <span class="math inline">\(\beta_1=\beta_2=\beta_3=\beta_4=\beta_5=\beta_6=0\)</span>
+against an alternative that at least one of the <span class="math inline">\(\beta_j \neq 0\)</span> (i.e.&#160;at least one
+coefficient is different from zero). See section 4-5e of Wooldridge for
+general guidance.</p>
+<p>Show your work/code to: calculate the F-statistic, find the critical
+value of the F statistic, find the p-value of your calculated
+F-statistic, and discuss your conclusions regarding the overall
+significance test at the 5% significance level, along with how you reach
+those conclusions.</p>
+<p>Hint- to run a regression on only an intercept, <span class="math inline">\(y=\beta_0+u\)</span>, the appropriate command is
+“lm(y~1, data=df)”</p>
+<pre class="r"><code>library(wooldridge)
+df &lt;- as.data.frame(htv)
+
+if(! &quot;abilsq&quot; %in% names(df)) df$abilsq &lt;- df$abil * df$abil
+
+ur_model &lt;- lm(educ ~ motheduc + fatheduc + abil + abilsq + tuit17 + tuit18, data = df)
+
+r_model &lt;- lm(educ ~ 1, data = df)
+
+RSS_r &lt;- sum(resid(r_model)^2)
+RSS_u &lt;- sum(resid(ur_model)^2)
+
+q &lt;- length(coef(ur_model)) - 1   
+
+df_ur &lt;- ur_model$df.residual     
+
+F_stat &lt;- ((RSS_r - RSS_u) / q) / (RSS_u / df_ur)
+F_stat</code></pre>
+<pre><code>## [1] 163.5079</code></pre>
+<pre class="r"><code>alpha &lt;- 0.05
+crit_f &lt;- qf(1 - alpha, q, df_ur)
+crit_f</code></pre>
+<pre><code>## [1] 2.105981</code></pre>
+<pre class="r"><code>p_val &lt;- pf(F_stat, q, df_ur, lower.tail = FALSE)
+p_val</code></pre>
+<pre><code>## [1] 0.00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001426579</code></pre>
+<p>A:We reject the null and one of the independent variables is in the
+affect of education being the 163.5079.</p>
+<p></p>
+</div>
+</div></font>
+
+
+
+
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script type="module" src="https://s.brightspace.com/lib/bsi/2025.12.237/unbundled/mathjax.js"></script><script type="text/javascript">document.addEventListener('DOMContentLoaded', function() {
+						if (document.querySelector('math, .d2l-element, .d2l-cplus-layout') || /\$\$|\\\(|\\\[|\\begin{|\\ref{|\\eqref{/.test(document.body.innerHTML)) {
+							document.querySelectorAll('mspace[linebreak="newline"]').forEach(elm => {
+								elm.setAttribute('style', 'display: block; height: 0.5rem;');
+							});
+
+							document.querySelectorAll('math mmultiscripts > none').forEach(elm => {
+								const mrow = document.createElementNS('http://www.w3.org/1998/Math/MathML', 'mrow');
+								elm.replaceWith(mrow);
+							});
+
+							window.D2L.MathJax.loadMathJax({
+								outputScale: 1,
+								renderLatex: true,
+								enableMML3Support: false
+							});
+						}
+					});</script><script type="module" src="https://s.brightspace.com/lib/bsi/2025.12.237/unbundled/prism.js"></script><script type="text/javascript">document.addEventListener('DOMContentLoaded', function() {
+					document.querySelectorAll('.d2l-code').forEach(code => {
+						window.D2L.Prism.formatCodeElement(code);
+					});
+				});</script><script type="module" src="https://s.brightspace.com/lib/bsi/2025.12.237/unbundled/embeds.js"></script><script type="text/javascript">document.addEventListener('DOMContentLoaded', function() {
+					window.D2L.EmbedRenderer.renderEmbeds(document.body);
+				});</script></body></html>
