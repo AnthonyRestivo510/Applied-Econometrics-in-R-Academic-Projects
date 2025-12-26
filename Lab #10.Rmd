@@ -1,0 +1,319 @@
+---
+title: "Binary Dependent Variables"
+author: "Anthony Restivo"
+date: "11/09/2025"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+### the code below will round answers to 4 decimals and make sure output is not in scientific notation format
+knitr::opts_chunk$set(echo = TRUE)
+options(scipen=999)
+## uncomment and run the line below if you have never installed the stargazer package
+# install.packages("stargazer")
+#install.packages("stats")
+rm(list=ls())
+library(tidyverse)
+library(stargazer)
+library(wooldridge)
+library(stats)
+```
+## Intro
+
+We will take today's exercise as an opportunity to learn about how to work with situations where the dependent variable is a binary outcome. 
+
+There are many relevant examples of binary outcomes, for example:
+
+- employment status among those in the labor force (employed/unemployed)
+
+- whether an individual purchases a product or not (purchase/no purchase)
+
+- whether an individual is approved for a loan or not
+
+- whether an individual is eligible for a 401k plan or not.
+
+- whether an individual has made a donation to a charity or not
+
+- whether a couple has children or not
+
+- whether an individual was arrested during a particular period of time
+
+
+This differs from our work last week, where we investigated how to include categorical variables as independent variables. 
+
+In today's exercise, we will investigate the determinants of loan approval rates. Think about an economic model like $$approve=f(\text{credit risk factors}, \text{demographic factors}, \text{other factors})$$
+where:
+
+approve = 1 if the applicant is approved for the loan, and 0 if they are rejected. Hence, our dependent variable is "binary".  
+
+credit risk factors could include factors like
+
+- applicant's housing expenditures and other debt obligations, as a fraction of total income 
+
+- the employment status of the applicant 
+
+- their history of late payments
+
+- whether they have a cosigner
+
+Demographic factors could include things like:
+
+- applicant race
+
+- applicant sex
+
+- applicant marital status
+
+- number of dependents
+
+and other things. 
+
+Models that have a binary dependent variable are known as **linear probability models** (LPM for short), we will estimate a few below.  
+
+
+## Q0
+Clear your environment and assign the data "loanapp" from the Wooldridge package to an object named df or similar.
+
+The data is pulled from the article at the following link, let's read the abstract:
+https://link.springer.com/article/10.1007/BF00174551
+
+```{r}
+df <- loanapp 
+
+```
+## Q1
+
+Let's do a "warmup" of looking at various descriptive statistics with our data. 
+
+### Q1A
+
+Find the average loan approval rate for 3 different groups of individuals:
+white individuals, black individuals, and hispanic individuals. 
+
+Identify how many individuals from the sample there are in each of these groups, and comment on the differences in loan approval rates across the groups. 
+
+Hint - let's learn how to do something like this using dplyr, part of the tidyverse package, make sure you have tidyverse loaded!
+
+```{r}
+avg_approve <- df %>% 
+  group_by(black, hispan,white) %>% 
+  summarize(mean(approve),n())
+avg_approve
+
+```
+A: The mean approval rate for a white individual is
+`r 100*avg_approve[1,"mean(approve)"] %>% round(digits=3) `%. 
+The mean approval rate for a hispanic individual is `r 100*avg_approve[2,"mean(approve)"] %>% round(digits=3) `%. 
+The mean approval rate for a black individual is `r 100*avg_approve[3,"mean(approve)"] %>% round(digits=3) `%.
+
+
+### Q1B
+
+Explore whether there are differences in credit risk factors between black, hispanic, and white individuals. Find the average bankruptcy rates and average debt obligations (as % of total income) across these 3 groups, and comment on the differences across the groups.
+
+```{r}
+avg_credit <- df %>% 
+  group_by(black, hispan,white) %>% 
+  summarize(mean(pubrec),mean(obrat))
+avg_credit
+```
+A: The average credit risk factor for a white individual is
+`r 100*avg_credit[1,"mean(pubrec)"] %>% round(digits=3) `%. 
+The average credit risk factor for a Hispanic individual is `r 100*avg_credit[2,"mean(pubrec)"] %>% round(digits=3) `%. 
+The average credit risk factor for a black individual is `r 100*avg_credit[3,"mean(pubrec)"] %>% round(digits=3) `%.
+
+
+
+### Q1C
+
+What relationship do you see in the data between the income of the applicant, and the size of the loan they are applying for? 
+
+Plot a scatter plot with income on the horizontal axis and loan amount on the vertical axis
+
+```{r}
+plot(df$appinc,df$loanamt)
+
+
+
+```
+
+
+## Q2
+
+Consider an initial linear probability model like the following:  
+$$ approve_i = \beta_0 + \beta_1 white_i+e_i$$
+Q for chat: What does the intercept represent in this model?
+
+A: Average loan approval rate for nonwhite individuals. 
+
+### Q2A
+Estimate this model and store the results in an object named "ols1" or similar. 
+
+Print the output results using stargazer.
+
+```{r}
+ols1 <- lm(approve~white,data=df)
+stargazer(ols1, type="text")
+summary(ols1)
+```
+
+### Q2B
+
+Suppose the appropriate credit risk factors have been controlled for. If there is discrimination against minorities, what is the sign of $\beta_1$?
+
+A: $\beta_1$ will be positive if there is discrimination that favors white applicants (harms minority applicants).
+
+### Q2C
+
+Interpret the coefficient on white from your regression above. 
+
+Is it statistically significant at the conventional significance levels? 
+
+Is it economically significant?
+
+A: White Individuals have a 20.1% advantage in loan approval rates. It is significant at the levels and is economically significant because it's a major advantage. 
+
+## Q3
+
+Add a few credit risk and demographic variables to the model. Specifically, estimate the following:
+
+\begin{equation}
+\begin{split}
+approve = \beta_0 &+ \beta_1 white + \beta_2 hrat  +\beta_3 obrat\\ &+ \beta_4 loanprc + \beta_5 unem
++\beta_6 male \\ &+ \beta_7 married + \beta_8 dep +\beta_9 sch\\ &+ \beta_{10} cosign + \beta_{11} chist + \beta_{12} pubrec \\ &+ \beta_{13} mortlat1 + \beta_{14} mortlat2+\beta_{15} vr + u
+\end{split}
+\end{equation}
+
+where, from the help file: 
+
+- white: =1 for white individuals, and =0 for black/hispanic individuals
+
+- hrat: housing expenditure, percent total income
+
+- obrat: other debt obligations, percent total income
+
+- loanprc: percent of house price being loaned (amt/price)
+
+- male: indicator for male
+
+- married: indicator for married
+
+- dep: number of dependents
+
+- sch: indicator for >12 years schooling
+
+- cosign: indicator for having a cosigner
+
+- chist: =0 if applicant has accounts delinquent >= 60 days
+
+- pubrec: indicator for filing bankruptcy
+
+- mortlat1: indicator for 1 or 2 late mortgage payments in past
+
+- mortlat2: indicator for >2 late mortgage payments in past
+
+- vr: high vacancy indicator, =1 if census tract vacancy rate is higher than the median for the MSA.
+
+### Q3A 
+Estimate the model above, store your results in an object named "ols2" or similar. Print the results using stargazer alongside the results from the model in Q2.
+
+```{r}
+model3a <- approve ~ white + hrat + obrat + loanprc + unem + male + married + dep + sch + cosign + chist + pubrec + mortlat1 + mortlat2 + vr
+
+ols2 <- lm(model3a, data=df)
+
+
+
+stargazer(ols1,ols2,type="text")
+
+```
+### Q3B
+
+Interpret the coefficient on white.Relative to the model in Q2, what happens to the coefficient on white? Is there evidence of discrimination against nonwhites?
+
+A:Both models show an example of an advantage of approval rate. There appears to be some discrimination against the nonwhites. 
+
+### Q3C
+
+Suppose the individuals other debt obligations as a percentage of income were to increase by 10 percentage points. What is the estimated impact on the probability of loan approval?
+
+A: The loan approval rate would decrease due to individuals unable to keep up with paying other debt obligations due to their low income compared to the debt. 
+
+## Q4
+
+Consider a model identical to the model in Q3A, but allowing for there to be differences by race in the effect of other debt obligations (obrat) on loan approval. 
+
+\begin{equation}
+\begin{split}
+approve = \beta_0 &+ \beta_1 white + \beta_2 hrat  +\beta_3 obrat +\beta_4 obrat*white \\ &+ \beta_5 loanprc + \beta_6 unem
++\beta_7 male \\ &+ \beta_8 married + \beta_9 dep +\beta_{10} sch\\ &+ \beta_{11} cosign + \beta_{12} chist + \beta_{13} pubrec \\ &+ \beta_{14} mortlat1 + \beta_{15} mortlat2+\beta_{16} vr + u
+\end{split}
+\end{equation}
+
+Notice the interaction between white and obrat allows for the effect of obrat to possibly be different, depending on the value of white:
+
+$$\frac{\Delta approve}{\Delta obrat}=\beta_3+\beta_4*white$$
+
+That is, for white individuals:
+
+$$\frac{\Delta approve}{\Delta obrat}=\beta_3+\beta_4*1=\beta_3+\beta_4$$
+and for minority individuals
+
+$$\frac{\Delta approve}{\Delta obrat}=\beta_3+\beta_4*0=\beta_3$$
+
+### Q4A
+Estimate the model above, store the estimates as "ols3" or similar, and print them using Stargazer alongside your other estimates from Q2 and Q3.
+
+```{r}
+model4a <- approve ~ white + hrat + obrat + obrat:white + loanprc + unem + male + married + dep + sch + cosign + chist + pubrec + mortlat1 + mortlat2 + vr
+
+ols3 <- lm(, data=df)
+
+stargazer(ols1,ols2,ols3, type = "text")
+
+summary(ols3)
+
+```
+
+### Q4B 
+Specify an appropriate hypothesis test for racial differences in the effect of other debt obligations on loan approvals.
+
+Null hypothesis - $H_O:\beta_4=0$
+
+Alternative hypothesis - $H_A:\beta_4\neq0$
+
+### Q4C
+Is the interaction term significant at the conventional significance levels? 
+
+(Make an argument using your preferred method - comparing the t-statistic to its critical value, based on p-values, confidence intervals, it's up to you)
+
+A: The interaction tern is NOT significant at the conventional levels. We can see this from the high p-value and the t-stat being near zero. 
+
+### Q4D
+
+Suppose the individual's other debt obligations as a percentage of income increase by 10 percentage points. 
+
+```{r}
+obrat_white <- 100*(ols3$coefficients["obrat"]+ols3$coefficients["white:obrat"])
+
+obrat_minority <- 100*(ols3$coefficients["obrat"])
+```
+A: The probability of loan approval decreases 
+
+`r obrat_minority*10`
+
+What is the estimated effect on the probability of loan approval if the individual is white? 
+
+A: The probability would be around the same decreasing `r obrat_minority*10`
+
+What if the individual is nonwhite? 
+
+A:The probability of loan approval decreases 
+
+`r obrat_minority*10`
+
+Do you have evidence that other debt obligations are penalized differently between white individuals and nonwhite individuals?
+
+A: There is no strong evidence that that other debt obligations have been penalized between white individuals and nonwhite individuals. 
+
+
