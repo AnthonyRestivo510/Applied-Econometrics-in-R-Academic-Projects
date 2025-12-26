@@ -1,0 +1,287 @@
+---
+title: "Simulation Exercise -  Omitted Variable Bias"
+author: Anthony Restivo
+date: "10/07/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+# the line below makes sure to include your R source code in the knitted document
+knitr::opts_chunk$set(echo = TRUE)
+
+# the line below suppresses errors when knitting the document
+knitr::opts_chunk$set(error = TRUE)
+
+# the code below will round answers to 2 decimals and make sure output is not in scientific notation format
+knitr::knit_hooks$set(inline = function(x) {
+  x <- sprintf("%1.2f", x)
+  paste(x, collapse = ", ")
+})
+options(scipen=999)
+
+# clear environment and load in packages
+rm(list=ls())
+
+# load in some packages
+library(wooldridge)
+library(tidyverse)
+set.seed(1)
+```
+<font size = "5">
+
+## Introduction
+
+The purpose of this exercise is to understand how omitted variable bias can impact your estimates and lead to inferential errors.
+
+On your path to understanding this, you are going to “play god” in some sense. You are going to construct a population with known parameters. You will then sample from this population, and estimate a misspecified model. 
+
+The misspecification in this particular model will be that it omits relevant independent variables that are correlated with the independent variables included in our model. This would be a violation of the “zero conditional mean assumption”, also known as the exogeneity assumption.
+
+In doing this process, you will learn how this common type of misspecification can lead you to draw the wrong conclusions regarding relationships between variables.
+
+## Simulate data
+
+### Q0
+
+Run all and knit! 
+
+### Q1
+
+Generate 300 observations of a disturbance $u$ from the standard normal distribution.  
+
+Reminder- the standard normal distribution is the Normal distribution with mean=0 and standard deviation =1.  
+```{r}
+u <- rnorm(300,0,1)
+```
+
+Plot the disturbances in a histogram.
+
+```{r}
+qplot(u)
+```
+
+### Q2 
+
+Generate 300 observations of another disturbance $e$ from the standard normal distribution
+
+```{r}
+e <- rnorm(300,0,1)
+```
+### Q3
+
+Generate 300 observations of an explanatory variable $x_1$ from the standard normal distribution.
+
+```{r cars}
+x1 <- rnorm(300,0,1)
+```
+
+### Q4
+
+Construct a second explanatory variable, $x_2$ using your variables generated in steps 2-3 such that it is related to $x_1$ in the following way:
+
+$$x_2 = x_1 + e$$
+```{r}
+x2 <- x1 +e
+```
+
+### Q5
+Construct a scatter plot to visualize the relationship between x1 and x2. 
+
+```{r}
+qplot(x2,x1)
+```
+What correlation do you observe between $x_1$ and $x_2$?
+
+A:Both x2 and x1 exhibit a horizontal increase 
+
+### Q6
+
+Using your simulated variables, construct the dependent variable $y$ according to the following:
+$$ y = 1 + x_1-3x_2+u$$
+```{r}
+ y <- 1 + x1 -3*x2+u
+```
+
+Note that you have just constructed the population model. 
+
+Remind yourself that, in practice, you would never actually observe the population model, but here you get to have the fun of being an all-powerful deity in a toy universe. 
+
+The idea is that, by constructing the model, we know exactly what the parameters are, and will be able to learn about how a particular type of violation of our assumptions will end up impacting our estimates.
+
+### Q7 
+
+Based on what have you simulated so far, consider the following:
+
+Q:What is the "true" partial effect of x1 on y?
+
+A:The true partial effect is the coefficient within the whole plot, identifying the shifts in y. 
+
+Q: What is the "true" partial effect of x2 on y?
+
+A:The true partial effect of x2 on y is the sum of all the coefficients showing the major shifts in y. 
+
+Q: Outside of the this lab simulation, would we ever be able to observe these "true" population parameters?
+
+A:
+
+## Data Analysis
+
+### Q8
+
+Now, suppose that in a rush you estimate the follow misspecified model:
+$$ y=\tilde{\beta_0}+\tilde{\beta_1}x_1 + r$$
+where $y$ is the dependent variable constructed according to the model Q6, and $x_1$ is the independent variable constructed in Q3.
+
+Q: What does r represent in this model?
+
+A:Any unobserved determinant of y 
+
+Q: Why would we say this model is misspecified?
+
+A:We can agree x2 sitting inside of r. We should be able to agree that x1 and x2 are related because we built them to be related. We left out a relevant variable. 
+
+Q: Make a scatter plot with $x_1$ on the horizontal axis and $y$ on the vertical axis. In this naive analysis, what relationship do you observe between $x_1$ and $y$?
+
+```{r}
+qplot(x1,y)
+```
+A: A downward slope relationship 
+
+### Q9
+Estimate this model using 3 different "random" samples:
+1) observations 1-100
+2) observations 101-200
+3) observations 201-300
+
+```{r}
+m1 <- lm(y[1:100]~x1[1:100])
+m2 <- lm(y[101:200]~x1[101:200])
+m3 <- lm(y[201:300]~x1[201:300])
+
+summary(m1)
+summary(m2)
+summary(m3)
+```
+
+
+### Q10
+
+Interpret the slope estimate from the first sample.
+
+A:-1.5264
+
+### Q11
+
+Why are your estimates slightly different across samples?
+
+A:The samples are slightly different across due to the fact of the out of the blue differences within the population. 
+
+### Q12
+
+Compare the slope estimates from your 3 sample to the "true" population parameters? 
+
+How far are these estimates from the true partial effect of $x_1$ on $y$?
+
+A:Not far at all from a true partial effect because their is regression containing a major negative connection. 
+
+### Q13
+
+Now, run an appropriately specified model. Regression y on x1 and x2, using the 3 different samples outlined in Q9 above.
+
+```{r}
+ols1 <- lm(y[1:100]~x1[1:100]+x2[1:100])
+ols2 <- lm(y[101:200]~x1[101:200]+x2[101:200])
+ols3 <- lm(y[201:300]~x1[201:300]+x2[201:300])
+
+summary(ols1)
+summary(ols2)
+summary(ols3)
+```
+### Q14
+
+How do your estimates in the appropriately specified model compare to the true population parameters?
+
+A:The value of the estimates have no influence , meeting the values that makes sense.
+
+### Q15
+
+Consider what econometric theory has to say about the expected value of the slope estimate in a model with omitted variables (equation 3.45 in chapter 3).
+$$\underbrace{E(\tilde{\beta_1})}_{\text{expected}\\\text{slope estimate}\\\text{ in misspecified model}}=\underbrace{\beta_1}_{\text{true parameter}}+\underbrace{\beta_2 \tilde{\delta_1}}_{\text{bias}}$$
+where $\beta_1$ and $\beta_2$ are the "true" population parameters, and $\tilde{\delta_1}$ is the slope from a regression of $x_2$ on $x_1$.
+
+The "problem" is that we do not observe the two pieces of information on the right hand side - we just observe the single piece of information, the slope estimate from the misspecified model $\tilde{\beta_1}$, and know that it is a combination of the true parameter $\beta_1$ and the bias term $\beta_2 \tilde{\delta_1}$ . 
+
+Hence, our estimate of $\beta_1$ is biased in our misspecified model that has omitted variables - its expected value is not the true population parameter.
+
+We will now try to "verify" that the relationship above from theory holds by reconstructing it.
+
+### Q16
+
+Run the regression of $x_2$ on $x_1$ to estimate $\tilde{\delta_1}$.
+
+```{r}
+aux <- lm(x2[1:100]~x1[1:100])
+summary(aux)
+```
+
+$\widehat{\tilde{\delta_1}} =.9
+
+### Q17
+
+Plug in your estimate of $\tilde{\delta_1}$ along with the true parameter values $\beta_1$ and $\beta_2$ to get the slope estimate in the misspecified model as predicted by econometric theory.
+
+$$E(\tilde{\beta_1})=\beta_1+\beta_2 \tilde{\delta_1}\\
+E(\tilde{\beta_1})= 1+(-3)(0.9)=-1.7 \\ $$
+
+### Q18
+
+How does the slope in the misspecified model, as predicted by theory above in Q17 compare to the actual slope estimate from the misspecified models in Q9?
+
+That is - plug in values for the right hand side of the equation in Q17, and compare your result to your estimates of $\tilde{\beta_1}$ in from the models in Q9 
+
+A:The slope in q9 is progressively rising while this slope is curling downward decreasing. 
+
+### Q20
+
+What is the estimate from the misspecified model capturing that introduces this bias?
+
+A:The whole idea is when you regress y only on x1 the effect of x1 is going to partially effect the effect of x2 and x1 ends up decreasing y due to x1 and x1 being related. 
+
+### Q21
+
+Some bigwig at your company asks you about the impact of X1 on Y. Explain how you could draw drastically different conclusions between your estimates from Q9 and those obtained in Q13. What do your results suggest about this particular type of model misspecification? 
+
+A: We need to show them how we can get different estimates between doing things the right way with specified model and not doing the incorrect way the mi specified model. 
+
+
+### Q22
+
+Chunk below reserved for demonstration at end of video!
+
+
+```{r}
+results <- data.frame(x1coef=NA)
+  for (i in 1:500){ 
+    error1 <- rnorm(500)
+    error2 <- rnorm(500)
+    x1 <- rnorm(500)
+    x2 <-  x1+error1
+    y=1+x1-3*x2+error2
+    olsmodel <- lm(y~x1)
+    results[i,] <- coef(olsmodel)[['x1']]
+}
+hist(as.numeric(results$x1coef))
+
+results <- data.frame(x1coef=NA)
+  for (i in 1:500){ 
+    error1 <- rnorm(500)
+    error2 <- rnorm(500)
+    x1 <- rnorm(500)
+    x2 <-  x1+error1
+    y=1+x1-3*x2+error2
+    olsmodel <- lm(y~x1+x2) 
+    results[i,] <- coef(olsmodel)[[ x1']]
+}
+hist(as.numeric(results$x1coef))
+```
+</font>

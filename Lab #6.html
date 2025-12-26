@@ -1,0 +1,518 @@
+﻿<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html><head></head><body>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="container-fluid main-container">
+
+
+
+
+<div>
+
+
+
+<h1 class="title toc-ignore">Simulation Exercise - Omitted Variable
+Bias</h1>
+<h4 class="author">Anthony Restivo</h4>
+<h4 class="date">10/07/2021</h4>
+
+</div>
+
+
+<p><font size="5"></font></p><font size="5">
+<div class="section level2">
+<h2>Introduction</h2>
+<p>The purpose of this exercise is to understand how omitted variable
+bias can impact your estimates and lead to inferential errors.</p>
+<p>On your path to understanding this, you are going to “play god” in
+some sense. You are going to construct a population with known
+parameters. You will then sample from this population, and estimate a
+misspecified model.</p>
+<p>The misspecification in this particular model will be that it omits
+relevant independent variables that are correlated with the independent
+variables included in our model. This would be a violation of the “zero
+conditional mean assumption”, also known as the exogeneity
+assumption.</p>
+<p>In doing this process, you will learn how this common type of
+misspecification can lead you to draw the wrong conclusions regarding
+relationships between variables.</p>
+</div>
+<div class="section level2">
+<h2>Simulate data</h2>
+<div class="section level3">
+<h3>Q0</h3>
+<p>Run all and knit!</p>
+</div>
+<div class="section level3">
+<h3>Q1</h3>
+<p>Generate 300 observations of a disturbance <span class="math inline">\(u\)</span> from the standard normal
+distribution.</p>
+<p>Reminder- the standard normal distribution is the Normal distribution
+with mean=0 and standard deviation =1.</p>
+<pre class="r"><code>u &lt;- rnorm(300,0,1)</code></pre>
+<p>Plot the disturbances in a histogram.</p>
+<pre class="r"><code>qplot(u)</code></pre>
+<pre><code>## Warning: `qplot()` was deprecated in ggplot2 3.4.0.
+## This warning is displayed once every 8 hours.
+## Call `lifecycle::last_lifecycle_warnings()` to see where this warning was
+## generated.</code></pre>
+<pre><code>## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.</code></pre>
+<p><img src="javascript://" width="672"/></p>
+</div>
+<div class="section level3">
+<h3>Q2</h3>
+<p>Generate 300 observations of another disturbance <span class="math inline">\(e\)</span> from the standard normal
+distribution</p>
+<pre class="r"><code>e &lt;- rnorm(300,0,1)</code></pre>
+</div>
+<div class="section level3">
+<h3>Q3</h3>
+<p>Generate 300 observations of an explanatory variable <span class="math inline">\(x_1\)</span> from the standard normal
+distribution.</p>
+<pre class="r"><code>x1 &lt;- rnorm(300,0,1)</code></pre>
+</div>
+<div class="section level3">
+<h3>Q4</h3>
+<p>Construct a second explanatory variable, <span class="math inline">\(x_2\)</span> using your variables generated in
+steps 2-3 such that it is related to <span class="math inline">\(x_1\)</span> in the following way:</p>
+<p><span class="math display">\[x_2 = x_1 + e\]</span></p>
+<pre class="r"><code>x2 &lt;- x1 +e</code></pre>
+</div>
+<div class="section level3">
+<h3>Q5</h3>
+<p>Construct a scatter plot to visualize the relationship between x1 and
+x2.</p>
+<pre class="r"><code>qplot(x2,x1)</code></pre>
+<p><img src="javascript://" width="672"/>
+What correlation do you observe between <span class="math inline">\(x_1\)</span> and <span class="math inline">\(x_2\)</span>?</p>
+<p>A:Both x2 and x1 exhibit a horizontal increase</p>
+</div>
+<div class="section level3">
+<h3>Q6</h3>
+<p>Using your simulated variables, construct the dependent variable
+<span class="math inline">\(y\)</span> according to the following: <span class="math display">\[ y = 1 + x_1-3x_2+u\]</span></p>
+<pre class="r"><code> y &lt;- 1 + x1 -3*x2+u</code></pre>
+<p>Note that you have just constructed the population model.</p>
+<p>Remind yourself that, in practice, you would never actually observe
+the population model, but here you get to have the fun of being an
+all-powerful deity in a toy universe.</p>
+<p>The idea is that, by constructing the model, we know exactly what the
+parameters are, and will be able to learn about how a particular type of
+violation of our assumptions will end up impacting our estimates.</p>
+</div>
+<div class="section level3">
+<h3>Q7</h3>
+<p>Based on what have you simulated so far, consider the following:</p>
+<p>Q:What is the “true” partial effect of x1 on y?</p>
+<p>A:The true partial effect is the coefficient within the whole plot,
+identifying the shifts in y.</p>
+<p>Q: What is the “true” partial effect of x2 on y?</p>
+<p>A:The true partial effect of x2 on y is the sum of all the
+coefficients showing the major shifts in y.</p>
+<p>Q: Outside of the this lab simulation, would we ever be able to
+observe these “true” population parameters?</p>
+<p>A:</p>
+</div>
+</div>
+<div class="section level2">
+<h2>Data Analysis</h2>
+<div class="section level3">
+<h3>Q8</h3>
+<p>Now, suppose that in a rush you estimate the follow misspecified
+model: <span class="math display">\[
+y=\tilde{\beta_0}+\tilde{\beta_1}x_1 + r\]</span> where <span class="math inline">\(y\)</span> is the dependent variable constructed
+according to the model Q6, and <span class="math inline">\(x_1\)</span>
+is the independent variable constructed in Q3.</p>
+<p>Q: What does r represent in this model?</p>
+<p>A:Any unobserved determinant of y</p>
+<p>Q: Why would we say this model is misspecified?</p>
+<p>A:We can agree x2 sitting inside of r. We should be able to agree
+that x1 and x2 are related because we built them to be related. We left
+out a relevant variable.</p>
+<p>Q: Make a scatter plot with <span class="math inline">\(x_1\)</span>
+on the horizontal axis and <span class="math inline">\(y\)</span> on the
+vertical axis. In this naive analysis, what relationship do you observe
+between <span class="math inline">\(x_1\)</span> and <span class="math inline">\(y\)</span>?</p>
+<pre class="r"><code>qplot(x1,y)</code></pre>
+<p><img src="javascript://" width="672"/>
+A: A downward slope relationship</p>
+</div>
+<div class="section level3">
+<h3>Q9</h3>
+<p>Estimate this model using 3 different “random” samples: 1)
+observations 1-100 2) observations 101-200 3) observations 201-300</p>
+<pre class="r"><code>m1 &lt;- lm(y[1:100]~x1[1:100])
+m2 &lt;- lm(y[101:200]~x1[101:200])
+m3 &lt;- lm(y[201:300]~x1[201:300])
+
+summary(m1)</code></pre>
+<pre><code>## 
+## Call:
+## lm(formula = y[1:100] ~ x1[1:100])
+## 
+## Residuals:
+##     Min      1Q  Median      3Q     Max 
+## -7.0126 -2.3382 -0.0351  2.0793  9.9994 
+## 
+## Coefficients:
+##             Estimate Std. Error t value    Pr(&gt;|t|)    
+## (Intercept)   1.0388     0.3187   3.260     0.00153 ** 
+## x1[1:100]    -1.5756     0.2913  -5.408 0.000000449 ***
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## Residual standard error: 3.133 on 98 degrees of freedom
+## Multiple R-squared:  0.2299, Adjusted R-squared:  0.222 
+## F-statistic: 29.25 on 1 and 98 DF,  p-value: 0.0000004495</code></pre>
+<pre class="r"><code>summary(m2)</code></pre>
+<pre><code>## 
+## Call:
+## lm(formula = y[101:200] ~ x1[101:200])
+## 
+## Residuals:
+##      Min       1Q   Median       3Q      Max 
+## -12.7768  -2.1490   0.5352   1.9338   7.8387 
+## 
+## Coefficients:
+##             Estimate Std. Error t value       Pr(&gt;|t|)    
+## (Intercept)   1.0797     0.3516   3.071        0.00276 ** 
+## x1[101:200]  -2.2637     0.3220  -7.030 0.000000000279 ***
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## Residual standard error: 3.516 on 98 degrees of freedom
+## Multiple R-squared:  0.3352, Adjusted R-squared:  0.3284 
+## F-statistic: 49.41 on 1 and 98 DF,  p-value: 0.0000000002792</code></pre>
+<pre class="r"><code>summary(m3)</code></pre>
+<pre><code>## 
+## Call:
+## lm(formula = y[201:300] ~ x1[201:300])
+## 
+## Residuals:
+##     Min      1Q  Median      3Q     Max 
+## -5.8320 -2.4454 -0.1866  2.2336  8.2227 
+## 
+## Coefficients:
+##             Estimate Std. Error t value          Pr(&gt;|t|)    
+## (Intercept)   1.1673     0.3102   3.763          0.000286 ***
+## x1[201:300]  -2.4066     0.2865  -8.401 0.000000000000351 ***
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## Residual standard error: 3.102 on 98 degrees of freedom
+## Multiple R-squared:  0.4187, Adjusted R-squared:  0.4127 
+## F-statistic: 70.58 on 1 and 98 DF,  p-value: 0.0000000000003511</code></pre>
+</div>
+<div class="section level3">
+<h3>Q10</h3>
+<p>Interpret the slope estimate from the first sample.</p>
+<p>A:-1.5264</p>
+</div>
+<div class="section level3">
+<h3>Q11</h3>
+<p>Why are your estimates slightly different across samples?</p>
+<p>A:The samples are slightly different across due to the fact of the
+out of the blue differences within the population.</p>
+</div>
+<div class="section level3">
+<h3>Q12</h3>
+<p>Compare the slope estimates from your 3 sample to the “true”
+population parameters?</p>
+<p>How far are these estimates from the true partial effect of <span class="math inline">\(x_1\)</span> on <span class="math inline">\(y\)</span>?</p>
+<p>A:Not far at all from a true partial effect because their is
+regression containing a major negative connection.</p>
+</div>
+<div class="section level3">
+<h3>Q13</h3>
+<p>Now, run an appropriately specified model. Regression y on x1 and x2,
+using the 3 different samples outlined in Q9 above.</p>
+<pre class="r"><code>ols1 &lt;- lm(y[1:100]~x1[1:100]+x2[1:100])
+ols2 &lt;- lm(y[101:200]~x1[101:200]+x2[101:200])
+ols3 &lt;- lm(y[201:300]~x1[201:300]+x2[201:300])
+
+summary(ols1)</code></pre>
+<pre><code>## 
+## Call:
+## lm(formula = y[1:100] ~ x1[1:100] + x2[1:100])
+## 
+## Residuals:
+##     Min      1Q  Median      3Q     Max 
+## -2.3003 -0.5898 -0.0582  0.5824  2.1611 
+## 
+## Coefficients:
+##             Estimate Std. Error t value             Pr(&gt;|t|)    
+## (Intercept)  1.12422    0.09191  12.232 &lt; 0.0000000000000002 ***
+## x1[1:100]    1.10370    0.11701   9.433  0.00000000000000225 ***
+## x2[1:100]   -3.03627    0.09231 -32.892 &lt; 0.0000000000000002 ***
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## Residual standard error: 0.9033 on 97 degrees of freedom
+## Multiple R-squared:  0.9366, Adjusted R-squared:  0.9353 
+## F-statistic: 716.9 on 2 and 97 DF,  p-value: &lt; 0.00000000000000022</code></pre>
+<pre class="r"><code>summary(ols2)</code></pre>
+<pre><code>## 
+## Call:
+## lm(formula = y[101:200] ~ x1[101:200] + x2[101:200])
+## 
+## Residuals:
+##     Min      1Q  Median      3Q     Max 
+## -1.7285 -0.6076 -0.1670  0.5415  2.4441 
+## 
+## Coefficients:
+##             Estimate Std. Error t value             Pr(&gt;|t|)    
+## (Intercept)  0.96634    0.09579  10.088 &lt; 0.0000000000000002 ***
+## x1[101:200]  0.94101    0.12679   7.422      0.0000000000445 ***
+## x2[101:200] -2.89375    0.08269 -34.995 &lt; 0.0000000000000002 ***
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## Residual standard error: 0.9574 on 97 degrees of freedom
+## Multiple R-squared:  0.9512, Adjusted R-squared:  0.9502 
+## F-statistic: 945.5 on 2 and 97 DF,  p-value: &lt; 0.00000000000000022</code></pre>
+<pre class="r"><code>summary(ols3)</code></pre>
+<pre><code>## 
+## Call:
+## lm(formula = y[201:300] ~ x1[201:300] + x2[201:300])
+## 
+## Residuals:
+##      Min       1Q   Median       3Q      Max 
+## -2.87498 -0.50594 -0.00288  0.66185  2.60310 
+## 
+## Coefficients:
+##             Estimate Std. Error t value             Pr(&gt;|t|)    
+## (Intercept)   1.0276     0.1045   9.831  0.00000000000000031 ***
+## x1[201:300]   1.0528     0.1577   6.676  0.00000000153259635 ***
+## x2[201:300]  -3.0460     0.1099 -27.720 &lt; 0.0000000000000002 ***
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## Residual standard error: 1.044 on 97 degrees of freedom
+## Multiple R-squared:  0.9348, Adjusted R-squared:  0.9335 
+## F-statistic: 695.8 on 2 and 97 DF,  p-value: &lt; 0.00000000000000022</code></pre>
+</div>
+<div class="section level3">
+<h3>Q14</h3>
+<p>How do your estimates in the appropriately specified model compare to
+the true population parameters?</p>
+<p>A:The value of the estimates have no influence , meeting the values
+that makes sense.</p>
+</div>
+<div class="section level3">
+<h3>Q15</h3>
+<p>Consider what econometric theory has to say about the expected value
+of the slope estimate in a model with omitted variables (equation 3.45
+in chapter 3). <span class="math display">\[\underbrace{E(\tilde{\beta_1})}_{\text{expected}\\\text{slope
+estimate}\\\text{ in misspecified
+model}}=\underbrace{\beta_1}_{\text{true parameter}}+\underbrace{\beta_2
+\tilde{\delta_1}}_{\text{bias}}\]</span> where <span class="math inline">\(\beta_1\)</span> and <span class="math inline">\(\beta_2\)</span> are the “true” population
+parameters, and <span class="math inline">\(\tilde{\delta_1}\)</span> is
+the slope from a regression of <span class="math inline">\(x_2\)</span>
+on <span class="math inline">\(x_1\)</span>.</p>
+<p>The “problem” is that we do not observe the two pieces of information
+on the right hand side - we just observe the single piece of
+information, the slope estimate from the misspecified model <span class="math inline">\(\tilde{\beta_1}\)</span>, and know that it is a
+combination of the true parameter <span class="math inline">\(\beta_1\)</span> and the bias term <span class="math inline">\(\beta_2 \tilde{\delta_1}\)</span> .</p>
+<p>Hence, our estimate of <span class="math inline">\(\beta_1\)</span>
+is biased in our misspecified model that has omitted variables - its
+expected value is not the true population parameter.</p>
+<p>We will now try to “verify” that the relationship above from theory
+holds by reconstructing it.</p>
+</div>
+<div class="section level3">
+<h3>Q16</h3>
+<p>Run the regression of <span class="math inline">\(x_2\)</span> on
+<span class="math inline">\(x_1\)</span> to estimate <span class="math inline">\(\tilde{\delta_1}\)</span>.</p>
+<pre class="r"><code>aux &lt;- lm(x2[1:100]~x1[1:100])
+summary(aux)</code></pre>
+<pre><code>## 
+## Call:
+## lm(formula = x2[1:100] ~ x1[1:100])
+## 
+## Residuals:
+##      Min       1Q   Median       3Q      Max 
+## -2.58156 -0.55777  0.00381  0.75314  2.00530 
+## 
+## Coefficients:
+##             Estimate Std. Error t value             Pr(&gt;|t|)    
+## (Intercept)  0.02814    0.10054    0.28                 0.78    
+## x1[1:100]    0.88244    0.09192    9.60 0.000000000000000892 ***
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## Residual standard error: 0.9885 on 98 degrees of freedom
+## Multiple R-squared:  0.4847, Adjusted R-squared:  0.4794 
+## F-statistic: 92.17 on 1 and 98 DF,  p-value: 0.0000000000000008924</code></pre>
+<p>$ =.9</p>
+</div>
+<div class="section level3">
+<h3>Q17</h3>
+<p>Plug in your estimate of <span class="math inline">\(\tilde{\delta_1}\)</span> along with the true
+parameter values <span class="math inline">\(\beta_1\)</span> and <span class="math inline">\(\beta_2\)</span> to get the slope estimate in the
+misspecified model as predicted by econometric theory.</p>
+<p><span class="math display">\[E(\tilde{\beta_1})=\beta_1+\beta_2
+\tilde{\delta_1}\\
+E(\tilde{\beta_1})= 1+(-3)(0.9)=-1.7 \\ \]</span></p>
+</div>
+<div class="section level3">
+<h3>Q18</h3>
+<p>How does the slope in the misspecified model, as predicted by theory
+above in Q17 compare to the actual slope estimate from the misspecified
+models in Q9?</p>
+<p>That is - plug in values for the right hand side of the equation in
+Q17, and compare your result to your estimates of <span class="math inline">\(\tilde{\beta_1}\)</span> in from the models in
+Q9</p>
+<p>A:The slope in q9 is progressively rising while this slope is curling
+downward decreasing.</p>
+</div>
+<div class="section level3">
+<h3>Q20</h3>
+<p>What is the estimate from the misspecified model capturing that
+introduces this bias?</p>
+<p>A:The whole idea is when you regress y only on x1 the effect of x1 is
+going to partially effect the effect of x2 and x1 ends up decreasing y
+due to x1 and x1 being related.</p>
+</div>
+<div class="section level3">
+<h3>Q21</h3>
+<p>Some bigwig at your company asks you about the impact of X1 on Y.
+Explain how you could draw drastically different conclusions between
+your estimates from Q9 and those obtained in Q13. What do your results
+suggest about this particular type of model misspecification?</p>
+<p>A: We need to show them how we can get different estimates between
+doing things the right way with specified model and not doing the
+incorrect way the mi specified model.</p>
+</div>
+<div class="section level3">
+<h3>Q22</h3>
+<p>Chunk below reserved for demonstration at end of video!</p>
+<pre class="r"><code>results &lt;- data.frame(x1coef=NA)
+  for (i in 1:500){ 
+    error1 &lt;- rnorm(500)
+    error2 &lt;- rnorm(500)
+    x1 &lt;- rnorm(500)
+    x2 &lt;-  x1+error1
+    y=1+x1-3*x2+error2
+    olsmodel &lt;- lm(y~x1)
+    results[i,] &lt;- coef(olsmodel)[[&#39;x1&#39;]]
+}
+hist(as.numeric(results$x1coef))
+
+results &lt;- data.frame(x1coef=NA)
+  for (i in 1:500){ 
+    error1 &lt;- rnorm(500)
+    error2 &lt;- rnorm(500)
+    x1 &lt;- rnorm(500)
+    x2 &lt;-  x1+error1
+    y=1+x1-3*x2+error2
+    olsmodel &lt;- lm(y~x1+x2) 
+    results[i,] &lt;- coef(olsmodel)[[ x1&#39;]]
+}
+hist(as.numeric(results$x1coef))</code></pre>
+<pre><code>## Error in parse(text = input): &lt;text&gt;:21:39: unexpected INCOMPLETE_STRING
+## 22: }
+## 23: hist(as.numeric(results$x1coef))
+##                                           ^</code></pre>
+<p></p>
+</div>
+</div></font>
+
+
+
+
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script type="module" src="https://s.brightspace.com/lib/bsi/2025.12.237/unbundled/mathjax.js"></script><script type="text/javascript">document.addEventListener('DOMContentLoaded', function() {
+						if (document.querySelector('math, .d2l-element, .d2l-cplus-layout') || /\$\$|\\\(|\\\[|\\begin{|\\ref{|\\eqref{/.test(document.body.innerHTML)) {
+							document.querySelectorAll('mspace[linebreak="newline"]').forEach(elm => {
+								elm.setAttribute('style', 'display: block; height: 0.5rem;');
+							});
+
+							document.querySelectorAll('math mmultiscripts > none').forEach(elm => {
+								const mrow = document.createElementNS('http://www.w3.org/1998/Math/MathML', 'mrow');
+								elm.replaceWith(mrow);
+							});
+
+							window.D2L.MathJax.loadMathJax({
+								outputScale: 1,
+								renderLatex: true,
+								enableMML3Support: false
+							});
+						}
+					});</script><script type="module" src="https://s.brightspace.com/lib/bsi/2025.12.237/unbundled/prism.js"></script><script type="text/javascript">document.addEventListener('DOMContentLoaded', function() {
+					document.querySelectorAll('.d2l-code').forEach(code => {
+						window.D2L.Prism.formatCodeElement(code);
+					});
+				});</script><script type="module" src="https://s.brightspace.com/lib/bsi/2025.12.237/unbundled/embeds.js"></script><script type="text/javascript">document.addEventListener('DOMContentLoaded', function() {
+					window.D2L.EmbedRenderer.renderEmbeds(document.body);
+				});</script></body></html>
