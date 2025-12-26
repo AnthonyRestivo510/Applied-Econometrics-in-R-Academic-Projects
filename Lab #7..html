@@ -1,0 +1,533 @@
+﻿<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html><head></head><body>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="container-fluid main-container">
+
+
+
+
+<div>
+
+
+
+<h1 class="title toc-ignore">Hypothesis Testing 1</h1>
+<h4 class="author">Anthony Restivo</h4>
+<h4 class="date">10/20/25</h4>
+
+</div>
+
+
+<p><font size="5"></font></p><font size="5">
+<div class="section level2">
+<h2>Intro</h2>
+<p>As usual, we will use a particular econometric investigation as an
+opportunity to learn about hypothesis testing, as discussed in Chapter 4
+of Wooldridge.</p>
+<p>Our question of interest will be:</p>
+<p>All else equal, do smaller schools fare better than larger schools in
+terms of math standardized test performance?</p>
+<p>To address this question, we will estimate the following model using
+OLS:</p>
+<p><span class="math display">\[ math10_i = \beta_0 + \beta_1  enroll_i+
+\beta_2 totcomp_i  + \beta_3 staff_i  + u_i\]</span></p>
+<p>where <span class="math inline">\(i\)</span> indexes the schools in
+our sample:</p>
+<p>math10 = % students who pass a math standardized test</p>
+<p>enroll = number of students at school</p>
+<p>totcomp = average annual teacher compensation (proxy for teacher
+quality)</p>
+<p>staff = number of staff per 1,000 students (proxy for individualized
+attention)</p>
+<p>Our data come from a sample of 408 high schools in Michigan for the
+year 1993.</p>
+</div>
+<div class="section level2">
+<h2>Q0</h2>
+<p>Do a “Run All” and Knit the document to take a look at what we will
+be doing. The chunk below will load in the data and assign it to
+“df”.</p>
+<pre class="r"><code>df &lt;- meap93</code></pre>
+</div>
+<div class="section level2">
+<h2>Q1 - preliminaries</h2>
+<div class="section level3">
+<h3>Q1.a</h3>
+<p>Consider the partial effect of school size - that is, the effect of
+school size on math test scores, holding all other determinants of math
+test scores fixed.</p>
+<p>The students focus and determination to get a good grade.</p>
+<p><strong>state your hypothesis</strong></p>
+<p>All else equal, there should be a negative relationship between
+enrollment and math test scores.</p>
+<p>As enrollment goes up Math tends to go down.</p>
+<p>Expected effect: $ _1&lt;0 $</p>
+<p><strong>one-tailed hypothesis test</strong></p>
+<p>For a one tailed hypothesis test, the null hypothesis is what we
+intend to provide evidence against.</p>
+<p>Therefore, the null (<span class="math inline">\(H_O\)</span>) is
+<span class="math display">\[H_O: \beta_1 \geq 0 \]</span> while the
+alternative hypothesis is <span class="math display">\[H_A: \beta_1&lt;0
+\]</span> <strong>Mantra - NULL UNLESS PROVEN ALTERNATIVE</strong></p>
+<ul>
+<li>Meaning: You will assume the null hypothesis is true unless you
+collect overwhelming evidence against the null, evidence that favors
+some alternative hypothesis.</li>
+</ul>
+<hr/>
+<p><strong>two-tailed hypothesis test</strong></p>
+<p>A two-tailed hypothesis test may be appropriate in many circumstances
+and is frequently used in practice.</p>
+<p>They allow for detection of population parameters that are “different
+from zero”, meaning the test will reject the null hypothesis either when
+the population parameter is appropriately far in the positive direction,
+or appropriately far in the negative direction.</p>
+<p>Two-tailed hypothesis test might be used when:</p>
+<ol style="list-style-type: decimal;">
+<li><p>unsure of direction of effect</p></li>
+<li><p>don’t want to risk failing to detect an effect in unexpected
+direction</p></li>
+<li><p>want to hold investigation to a higher standard, as the
+“threshold of evidence” is higher for two-tailed tests</p></li>
+</ol>
+<hr/>
+<p>For a two-tailed hypothesis test, the null hypothesis is <span class="math display">\[ H_O: \beta_1=0 \]</span></p>
+<p>while the alternative is <span class="math display">\[ H_A: \beta_1
+\neq 0 \]</span></p>
+<p>(Allows <span class="math inline">\(\beta_1 &gt;0\)</span> or <span class="math inline">\(\beta_1 &lt;0\)</span>)</p>
+</div>
+<div class="section level3">
+<h3>Q1.b</h3>
+<p>Consider the partial effect of teacher quality</p>
+<p>I believe the effect is a negative, with the impact on students a
+qualified teacher can nu motivate the students to receive great
+grades.</p>
+<p>Expected effect: <span class="math inline">\(\beta_2\)</span></p>
+<p>For a one tailed hypothesis test the null hypothesis is <span class="math display">\[H_O:\beta_2  \]</span> while the alternative
+hypothesis is <span class="math display">\[H_A: \beta_2  \]</span></p>
+<p>For a two-tailed hypothesis test, the null hypothesis is <span class="math display">\[ H_O: \]</span></p>
+<p>while the alternative is <span class="math display">\[ H_A:
+\]</span></p>
+</div>
+<div class="section level3">
+<h3>Q1.c</h3>
+<p>Consider the partial effect of individual attention.</p>
+<p>A negative, more attention generally results in a great grades.</p>
+<p>Expected effect: <span class="math inline">\(\beta_3\)</span></p>
+<p>For a one tailed hypothesis test the null hypothesis is <span class="math display">\[H_O: \]</span> B3 &lt;= 0 while the alternative
+hypothesis is <span class="math display">\[H_A: \]</span> B3 &gt; 0 For
+a two-tailed hypothesis test, the null hypothesis is <span class="math display">\[ H_O: \]</span> B2 = 0</p>
+<p>while the alternative is <span class="math display">\[ H_A: \]</span>
+B2 =/ 0</p>
+</div>
+</div>
+<div class="section level2">
+<h2>Q2</h2>
+<div class="section level3">
+<h3>Q2.a - estimation</h3>
+<p>Estimate the model discussed in the intro and store the results in an
+object named “ols1”.</p>
+<p>Print the output table using the summary function rather than
+stargazer.</p>
+<pre class="r"><code>ols1 &lt;- lm(math10~enroll+totcomp+staff, data=df)
+
+ols1 %&gt;% summary() </code></pre>
+<pre><code>## 
+## Call:
+## lm(formula = math10 ~ enroll + totcomp + staff, data = df)
+## 
+## Residuals:
+##     Min      1Q  Median      3Q     Max 
+## -22.235  -7.008  -0.807   6.097  40.689 
+## 
+## Coefficients:
+##               Estimate Std. Error t value   Pr(&gt;|t|)    
+## (Intercept)  2.2740209  6.1137938   0.372      0.710    
+## enroll      -0.0001976  0.0002152  -0.918      0.359    
+## totcomp      0.0004586  0.0001004   4.570 0.00000649 ***
+## staff        0.0479199  0.0398140   1.204      0.229    
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## Residual standard error: 10.24 on 404 degrees of freedom
+## Multiple R-squared:  0.05406,    Adjusted R-squared:  0.04704 
+## F-statistic: 7.697 on 3 and 404 DF,  p-value: 0.00005179</code></pre>
+</div>
+<div class="section level3">
+<h3>Q2.b - store other info</h3>
+<p>Store coefficients in “coef”, t-statistics in “t_stat”, and p-values
+in “p_val”</p>
+<pre class="r"><code>coef &lt;- summary(ols1)$coefficients[,&quot;Estimate&quot;]
+coef</code></pre>
+<pre><code>##   (Intercept)        enroll       totcomp         staff 
+##  2.2740209322 -0.0001975613  0.0004586119  0.0479198735</code></pre>
+<pre class="r"><code>t_stat &lt;- summary(ols1)$coefficients[,&quot;t value&quot;]
+t_stat</code></pre>
+<pre><code>## (Intercept)      enroll     totcomp       staff 
+##   0.3719492  -0.9179348   4.5700302   1.2035926</code></pre>
+<pre class="r"><code>p_val &lt;- summary(ols1)$coefficients[,&quot;Pr(&gt;|t|)&quot;]
+p_val</code></pre>
+<pre><code>##    (Intercept)         enroll        totcomp          staff 
+## 0.710125657385 0.359200654826 0.000006489312 0.229451831645</code></pre>
+</div>
+</div>
+<div class="section level2">
+<h2>Inference - READ</h2>
+<p>Reviewing a few concepts from Chapter 4 reading.</p>
+<hr/>
+<div class="section level3">
+<h3>t-statistics</h3>
+<p><span class="math inline">\(\underline{t-statistic}\)</span>: the
+test statistic used for hypotheses regarding a single population
+parameter.</p>
+<p><span class="math display">\[t_{\widehat{\beta_j}}=\frac{\widehat{\beta_j}-\beta_j^{H_O}}{se(\widehat{\beta_j})}\]</span>
+where</p>
+<ul>
+<li><p><span class="math inline">\(\widehat{\beta_j}\)</span> is the
+estimated coefficient</p></li>
+<li><p><span class="math inline">\(\beta_j^{H_O}\)</span> is the
+hypothesized value of <span class="math inline">\(\beta_j\)</span> under
+the null hypothesis</p></li>
+<li><p><span class="math inline">\(se(\widehat{\beta_j})\)</span> is the
+standard error of <span class="math inline">\(\widehat{\beta_j}\)</span></p></li>
+</ul>
+<hr/>
+<p>Notice that <span class="math inline">\(t_{\widehat{\beta_j}}\)</span> is the “distance”
+of your estimate, <span class="math inline">\(\widehat{\beta_j}\)</span>
+from its hypothesized value under the null, <span class="math inline">\(\beta_j^{H_O}\)</span>, and is measured in terms
+of standard errors of <span class="math inline">\(\widehat{\beta_j}\)</span>.</p>
+<ul>
+<li><strong>The more evidence we have <em>against</em> the null
+hypothesis, the farther our estimate, <span class="math inline">\(\widehat{\beta_j}\)</span>, is from its
+hypothesized value under the null, and therefore the larger <span class="math inline">\(t_{\widehat{\beta_j}}\)</span> is. </strong></li>
+</ul>
+<hr/>
+</div>
+<div class="section level3">
+<h3>significance level</h3>
+<p><span class="math inline">\(\underline{significance\;level}\)</span>:
+the probability of falsely rejecting a true null hypothesis.</p>
+<hr/>
+<p>Unpacking this statement a little:</p>
+<ul>
+<li><p>Suppose that a true null hypothesis means that <span class="math inline">\(\beta_1 = 0\)</span>.</p></li>
+<li><p>Falsely rejecting this true null means you are concluding that
+either <span class="math inline">\(\beta_1 &gt;0\)</span> or <span class="math inline">\(\beta_1 &lt;0\)</span>, when in reality <span class="math inline">\(\beta_1 =0\)</span>.</p></li>
+<li><p>This type of mistake is also known as a “type 1 error” in
+statistics.</p></li>
+</ul>
+<hr/>
+<ul>
+<li><p>The significance level is chosen by the researcher. In other
+words, we “fix” the probability of falsely rejecting a null hypothesis
+that is true. We accept that this is a possibility, and chose the
+probability with which this event will happen.</p></li>
+<li><p>The shorthand for the significance level is “<span class="math inline">\(\alpha\)</span>” (“alpha”).</p></li>
+<li><p>Typical (“conventional”) choices are 5% (<span class="math inline">\(\alpha=0.05\)</span>) or occasionally 10% (<span class="math inline">\(\alpha=0.1\)</span>).</p></li>
+</ul>
+<hr/>
+<p>Smaller significance level</p>
+<p><span class="math inline">\(\hspace{10mm}\rightarrow\)</span>
+decreased probability of making a type 1 error</p>
+<p><span class="math inline">\(\hspace{20mm}\rightarrow\)</span> need
+increasingly stronger evidence against the null.</p>
+<hr/>
+<p><span class="math inline">\(\underline{confidence\;level}\)</span>:
+<span class="math inline">\((1-\alpha)\rightarrow\)</span> the
+probability of failing to reject a true null hypothesis.</p>
+<hr/>
+</div>
+<div class="section level3">
+<h3>critical value for test statistic</h3>
+<p><strong>critical values are “the bar” we compare our evidence to
+determine whether it is sufficient to reject the null
+hypothesis</strong></p>
+<hr/>
+<p><strong>one-tailed tests:</strong></p>
+<p>For tests that a population parameter is positive, the critical value
+will be the value of t at the <span class="math inline">\((1-\alpha)^{th}\)</span> (e.g.&#160;95th, 99th)
+percentile of the student’s test distribution. This will return a
+positive value.</p>
+<p>For tests that the population parameter is negative: the <span class="math inline">\(\alpha^{th}\)</span> (e.g.&#160;5th, 1st) percentile of
+the student’s t distribution. This will return a negative value.</p>
+<p><strong>Notice that for both of these, you are putting the entirety
+of <span class="math inline">\(\alpha\)</span> in a single tail, either
+the right tail, or the left tail.</strong></p>
+<hr/>
+<p><strong>two-tailed tests:</strong></p>
+<p>The only difference for two-tailed tests is that, rather than put the
+entirety of <span class="math inline">\(\alpha\)</span> in one tail, you
+put <span class="math inline">\(\frac{\alpha}{2}\)</span> in each
+tail.</p>
+<p>As such, you will be looking for the <span class="math inline">\((1-\frac{\alpha}{2})^{th}\)</span> percentile of
+the t distribution for the critical value.</p>
+<p>For example, if you have <span class="math inline">\(\alpha=0.05\)</span>, then you would be looking
+for the value at the <span class="math inline">\((1-0.025)=0.975\)</span> <span class="math inline">\((97.5^{th})\)</span> percentile of the t
+distribution.</p>
+<p>Note: smaller significance level <span class="math inline">\(\rightarrow\)</span> smaller probability of type 1
+error <span class="math inline">\(\rightarrow\)</span> critical value
+further from zero.</p>
+<hr/>
+</div>
+<div class="section level3">
+<h3><strong>Decision rules</strong></h3>
+<div class="section level4">
+<h4>based on critical values</h4>
+<ul>
+<li><p>If the t-stat from estimates is more extreme than its critical
+value: <strong>reject <span class="math inline">\(H_O\)</span> at the
+<span class="math inline">\(\alpha\)</span> level of
+significance.</strong></p></li>
+<li><p>If the t-stat from estimates is between 0 and critical value:
+<strong>fail to reject <span class="math inline">\(H_O\)</span> at the
+<span class="math inline">\(\alpha\)</span> level of
+significance.</strong></p></li>
+</ul>
+<p>In other words: reject the null if the absolute value of your t
+statistic is greater than the absolute value of its critical value.</p>
+<hr/>
+</div>
+<div class="section level4">
+<h4>based on p-values</h4>
+<p><span class="math inline">\(\underline{p-value}\)</span> the
+probability of getting a sample (data) that would give a test-statistic
+as extreme as the observed test-statistic, given that the null
+hypothesis is actually true.</p>
+<p>The way you show you have a lot of evidence against the null is to
+show that it is incredibly unlikely that you would get a sample of data
+that would give a regression estimate as extreme as your estimate if the
+null were true. P-values gives the probability of this event.</p>
+<p>When p-value <span class="math inline">\(\leq \alpha\)</span>:
+<strong>reject the null hypothesis</strong></p>
+<p>When p-value &gt; <span class="math inline">\(\alpha\)</span>:
+<strong>fail to reject the null hypothesis</strong></p>
+</div>
+</div>
+</div>
+<div class="section level2">
+<h2>Q3 - hypothesis testing</h2>
+<div class="section level3">
+<h3>Q3.a</h3>
+<p>Q: Calculate and report the t-statistic associated with your
+hypothesis tests regarding the effect of school size on math test
+performance. The formula for the t-statistic from above is copied below
+for your convenience.</p>
+<p>p value (two tailed, normal approx) p=.3590</p>
+<p>Since t = -0.9179 it fails to reject the null hypothesis at 5%
+significant levels</p>
+<p><span class="math display">\[t_{\widehat{\beta_j}}=\frac{\widehat{\beta_j}-\beta_j^{H_O}}{se(\widehat{\beta_j})}\]</span></p>
+<p>A: The t-statistic that corresponds to the effect of school size is
+NA. In this case we</p>
+<pre class="r"><code>qt(.95, df)</code></pre>
+<pre><code>## Error in qt(0.95, df): Non-numeric argument to mathematical function</code></pre>
+</div>
+<div class="section level3">
+<h3>Q3.b</h3>
+<p><strong>one-tailed hypothesis test:</strong></p>
+<p>Q: Use the function “qt” to calculate and report the critical value
+for t at the 5% significance level and the 1% significance level for one
+tailed tests.</p>
+<p>Note that the degrees of freedom in any regression is</p>
+<p><span class="math display">\[degrees freedom= \# observations - \#
+parameters \]</span> consider that there are n observations and (k+1)
+parameters (k slopes + 1 intercept) so that <span class="math display">\[df=n-(k+1)\\=n-k-1\]</span></p>
+<pre class="r"><code>deg.fr &lt;- ols1$df.residual
+
+#?qt
+crit_t_5_left &lt;- qt(0.05,deg.fr,lower.tail=T)
+crit_t_1_left &lt;- qt(0.01,deg.fr,lower.tail=T)
+
+crit_t_5_right &lt;- qt(0.05,deg.fr,lower.tail=F)
+crit_t_1_right &lt;- qt(0.01,deg.fr,lower.tail=F)</code></pre>
+<p>A:</p>
+<p><strong>two-tailed hypothesis test</strong></p>
+<p>Q: Find the appropriate critical value for the two-tailed hypothesis
+test, using the guidance above, and report it below.</p>
+<p>A:</p>
+</div>
+<div class="section level3">
+<h3>Q3.c</h3>
+<p><strong>one-tailed hypothesis test:</strong></p>
+<p>Q: Consider your hypothesis in Q1.a regarding the effect of school
+size. Refer to your estimates and compare the relevant t-statistic to
+the critical values above.</p>
+<p>Use the decision rules from chapter 4 that are summarized above to
+reach a conclusion regarding the one-tailed hypothesis test for the
+effect of school size on math test scores.</p>
+<p>A: The t-statistic on totcomp is 4.5700. The critical is -1.6486. In
+this case we fail to reject the null hypothesis at the 5% significance
+level.</p>
+<p><strong>two-tailed hypothesis test:</strong></p>
+<p>Q: Repeat the above, but for a two-tailed hypothesis test of the
+hypothesis in Q1.b.</p>
+<p>Hint- for two-tailed tests, the “rule of thumb” is that the critical
+value is 2 for a two sided test at the 5% significance level.</p>
+<p>A: The t-stat on totcomp is 4.5700. Since this is larger than 2, we
+reject the null hypothesis at the 5% significance level.</p>
+<hr/>
+</div>
+</div>
+<div class="section level2">
+<h2>Q4 - p-values</h2>
+<p>Focus on your estimates of the partial effect of school size.</p>
+<p><strong>p-values:</strong></p>
+<p>Reminder: p-value tells you the probability of getting a sample
+(data) that would give a t-statistic as high as
+(insert-calculated-t-stat-here) given that the null <span class="math inline">\(\beta_1 = 0\)</span> is true.</p>
+<p>Q: Use an inline R chunk to reference the p-value associated with
+your estimate <span class="math inline">\(\widehat{\beta_1}\)</span>.
+Interpret the p-value.</p>
+<p>A: The p-value on enroll is 0.3600. This states the probability of
+getting a sample that would give us estimates as extreme as what we see
+in our results, given that the null hypothesis were actually true, is
+36.0000%.</p>
+</div>
+<div class="section level2">
+<h2>Q5 - robust standard errors</h2>
+<p>I have hinted in class about standard error (estimators) that are
+“robust” to violations of the homoskedasticity assumption. In other
+words, are robust to heteroskedasticity.</p>
+<p>Here is some code to show you how to get a table with “robust
+standard errors”.</p>
+<pre class="r"><code>## robust standard errors
+coeftest(ols1, vcov = vcovHC(ols1, type=&quot;HC1&quot;))</code></pre>
+<pre><code>## 
+## t test of coefficients:
+## 
+##                Estimate  Std. Error t value   Pr(&gt;|t|)    
+## (Intercept)  2.27402093  7.96819660  0.2854     0.7755    
+## enroll      -0.00019756  0.00025548 -0.7733     0.4398    
+## totcomp      0.00045861  0.00011344  4.0427 0.00006329 ***
+## staff        0.04791987  0.05692911  0.8417     0.4004    
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1</code></pre>
+<pre class="r"><code>## non-robust standard errors
+
+summary(ols1)</code></pre>
+<pre><code>## 
+## Call:
+## lm(formula = math10 ~ enroll + totcomp + staff, data = df)
+## 
+## Residuals:
+##     Min      1Q  Median      3Q     Max 
+## -22.235  -7.008  -0.807   6.097  40.689 
+## 
+## Coefficients:
+##               Estimate Std. Error t value   Pr(&gt;|t|)    
+## (Intercept)  2.2740209  6.1137938   0.372      0.710    
+## enroll      -0.0001976  0.0002152  -0.918      0.359    
+## totcomp      0.0004586  0.0001004   4.570 0.00000649 ***
+## staff        0.0479199  0.0398140   1.204      0.229    
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## Residual standard error: 10.24 on 404 degrees of freedom
+## Multiple R-squared:  0.05406,    Adjusted R-squared:  0.04704 
+## F-statistic: 7.697 on 3 and 404 DF,  p-value: 0.00005179</code></pre>
+<p>Q: Compare the robust s.e. estimator to the non-robust s.e.
+estimator. What do you note regarding differences in standard errors? in
+t-statistics?</p>
+<p>A:There kinda different since that the fact that heteroskedasticity
+is seen within robust estimators.</p>
+<p></p>
+</div></font>
+
+
+
+
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script type="module" src="https://s.brightspace.com/lib/bsi/2025.12.237/unbundled/mathjax.js"></script><script type="text/javascript">document.addEventListener('DOMContentLoaded', function() {
+						if (document.querySelector('math, .d2l-element, .d2l-cplus-layout') || /\$\$|\\\(|\\\[|\\begin{|\\ref{|\\eqref{/.test(document.body.innerHTML)) {
+							document.querySelectorAll('mspace[linebreak="newline"]').forEach(elm => {
+								elm.setAttribute('style', 'display: block; height: 0.5rem;');
+							});
+
+							document.querySelectorAll('math mmultiscripts > none').forEach(elm => {
+								const mrow = document.createElementNS('http://www.w3.org/1998/Math/MathML', 'mrow');
+								elm.replaceWith(mrow);
+							});
+
+							window.D2L.MathJax.loadMathJax({
+								outputScale: 1,
+								renderLatex: true,
+								enableMML3Support: false
+							});
+						}
+					});</script><script type="module" src="https://s.brightspace.com/lib/bsi/2025.12.237/unbundled/prism.js"></script><script type="text/javascript">document.addEventListener('DOMContentLoaded', function() {
+					document.querySelectorAll('.d2l-code').forEach(code => {
+						window.D2L.Prism.formatCodeElement(code);
+					});
+				});</script><script type="module" src="https://s.brightspace.com/lib/bsi/2025.12.237/unbundled/embeds.js"></script><script type="text/javascript">document.addEventListener('DOMContentLoaded', function() {
+					window.D2L.EmbedRenderer.renderEmbeds(document.body);
+				});</script></body></html>

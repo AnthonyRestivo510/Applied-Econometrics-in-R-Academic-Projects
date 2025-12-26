@@ -1,0 +1,403 @@
+---
+title: "Hypothesis Testing 1"
+author: "Anthony Restivo"
+date: "10/20/25"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+# the line below makes sure to include your R source code in the knitted document
+knitr::opts_chunk$set(echo = TRUE)
+
+# the line below suppresses errors when knitting the document
+knitr::opts_chunk$set(error = TRUE)
+
+# the code below will round answers to 2 decimals and make sure output is not in scientific notation format
+knitr::knit_hooks$set(inline = function(x) {
+  x <- sprintf("%1.4f", x)
+  paste(x, collapse = ", ")
+})
+options(scipen=999)
+
+# clear environment and load in packages
+rm(list=ls())
+
+#load in packages
+library(tidyverse)
+library(wooldridge)
+library(stats)
+library(lmtest)
+library(sandwich)
+```
+<font size="5">
+
+## Intro
+As usual, we will use a particular econometric investigation as an opportunity to learn about hypothesis testing, as discussed in Chapter 4 of Wooldridge. 
+
+Our question of interest will be:
+
+All else equal, do smaller schools fare better than larger schools in terms of math standardized test performance?
+
+To address this question, we will estimate the following model using OLS:
+
+$$ math10_i = \beta_0 + \beta_1  enroll_i+ \beta_2 totcomp_i  + \beta_3 staff_i  + u_i$$
+
+where $i$ indexes the schools in our sample:
+
+math10 = % students who pass a math standardized test
+
+enroll = number of students at school
+
+totcomp = average annual teacher compensation (proxy for teacher quality)
+
+staff = number of staff per 1,000 students
+(proxy for individualized attention)
+
+Our data come from a sample of 408 high schools in Michigan for the year 1993.
+
+## Q0
+Do a "Run All" and Knit the document to take a look at what we will be doing. The chunk below will load in the data and assign it to "df".
+```{r}
+df <- meap93
+```
+
+
+## Q1 - preliminaries
+
+### Q1.a
+Consider the partial effect of school size - that is, the effect of school size on math test scores, holding all other determinants of math test scores fixed.
+
+The students focus and determination to get a good grade. 
+
+
+**state your hypothesis**
+
+All else equal, there should be a negative relationship between enrollment and math test scores.
+
+As enrollment goes up Math tends to go down. 
+
+
+Expected effect: $ \beta_1<0 $
+
+
+**one-tailed hypothesis test**
+
+
+
+For a one tailed hypothesis test, the null hypothesis is what we intend to provide evidence against.
+
+Therefore, the null ($H_O$) is
+$$H_O: \beta_1 \geq 0 $$
+while the alternative hypothesis is
+$$H_A: \beta_1<0 $$
+**Mantra - NULL UNLESS PROVEN ALTERNATIVE**
+
+* Meaning: You will assume the null hypothesis is true unless you collect overwhelming evidence against the null, evidence that favors some alternative hypothesis.
+
+***
+
+**two-tailed hypothesis test**
+
+A two-tailed hypothesis test may be appropriate in many circumstances and is frequently used in practice.
+
+They allow for detection of population parameters that are "different from zero", meaning the test will reject the null hypothesis either when the population parameter is appropriately far in the positive direction, or appropriately far in the negative direction. 
+
+Two-tailed hypothesis test might be used when:
+
+1) unsure of direction of effect
+
+2) don't want to risk failing to detect an effect in unexpected direction
+
+3) want to hold investigation to a higher standard, as the "threshold of evidence" is higher for two-tailed tests
+
+***
+
+For a two-tailed hypothesis test, the null hypothesis is $$ H_O: \beta_1=0 $$
+
+while the alternative is $$ H_A: \beta_1 \neq 0 $$
+
+(Allows $\beta_1 >0$ or $\beta_1 <0$)
+
+### Q1.b
+Consider the partial effect of teacher quality
+
+I believe the effect is a negative, with the impact on students a qualified teacher can nu motivate the students to receive great grades. 
+
+Expected effect: $\beta_2$
+
+For a one tailed hypothesis test the null hypothesis is
+$$H_O:\beta_2  $$
+while the alternative hypothesis is
+$$H_A: \beta_2  $$
+
+For a two-tailed hypothesis test, the null hypothesis is $$ H_O: $$
+
+while the alternative is $$ H_A: $$
+
+### Q1.c
+
+Consider the partial effect of individual attention.
+
+A negative, more attention generally results in a great grades. 
+
+Expected effect: $\beta_3$
+
+For a one tailed hypothesis test the null hypothesis is
+$$H_O: $$ B3 <= 0 
+while the alternative hypothesis is
+$$H_A: $$ B3 > 0 
+For a two-tailed hypothesis test, the null hypothesis is $$ H_O: $$ B2 = 0
+
+while the alternative is $$ H_A: $$ B2 =/ 0 
+
+## Q2 
+
+### Q2.a - estimation
+
+Estimate the model discussed in the intro and store the results in an object named "ols1". 
+
+Print the output table using the summary function rather than stargazer. 
+
+```{r}
+ols1 <- lm(math10~enroll+totcomp+staff, data=df)
+
+ols1 %>% summary() 
+```
+### Q2.b - store other info
+
+Store coefficients in "coef", t-statistics in "t_stat", and p-values in "p_val"
+```{r}
+coef <- summary(ols1)$coefficients[,"Estimate"]
+coef
+
+t_stat <- summary(ols1)$coefficients[,"t value"]
+t_stat
+
+p_val <- summary(ols1)$coefficients[,"Pr(>|t|)"]
+p_val
+```
+
+## Inference - READ
+
+Reviewing a few concepts from Chapter 4 reading.
+
+***
+
+### t-statistics 
+$\underline{t-statistic}$: the test statistic used for hypotheses regarding a single population parameter. 
+
+$$t_{\widehat{\beta_j}}=\frac{\widehat{\beta_j}-\beta_j^{H_O}}{se(\widehat{\beta_j})}$$
+where
+
+* $\widehat{\beta_j}$ is the estimated coefficient
+
+* $\beta_j^{H_O}$ is the hypothesized value of $\beta_j$ under the null hypothesis
+
+* $se(\widehat{\beta_j})$ is the standard error of $\widehat{\beta_j}$
+
+***
+Notice that $t_{\widehat{\beta_j}}$ is the "distance" of your estimate, $\widehat{\beta_j}$ from its hypothesized value under the null, $\beta_j^{H_O}$, and is measured in terms of standard errors of $\widehat{\beta_j}$.
+
+
+* **The more evidence we have *against* the null hypothesis, the farther our estimate, $\widehat{\beta_j}$, is from its hypothesized value under the null, and therefore the larger $t_{\widehat{\beta_j}}$ is. **
+
+*** 
+
+### significance level
+$\underline{significance\;level}$: the probability of falsely rejecting a true null hypothesis.
+
+***
+
+Unpacking this statement a little:
+
+* Suppose that a true null hypothesis means that $\beta_1 = 0$. 
+
+* Falsely rejecting this true null means you are concluding that either $\beta_1 >0$ or $\beta_1 <0$, when in reality $\beta_1 =0$. 
+
+* This type of mistake is also known as a "type 1 error" in statistics.
+
+***
+
+* The significance level is chosen by the researcher. In other words, we "fix" the probability of falsely rejecting a null hypothesis that is true. We accept that this is a possibility, and chose the probability with which this event will happen.
+
+* The shorthand for the significance level is "$\alpha$" ("alpha"). 
+
+* Typical ("conventional") choices are 5\% ($\alpha=0.05$) or occasionally 10\% ($\alpha=0.1$).
+
+***
+
+Smaller significance level
+
+$\hspace{10mm}\rightarrow$ decreased probability of making a type 1 error 
+
+$\hspace{20mm}\rightarrow$ need increasingly stronger evidence against the null.
+
+***
+
+$\underline{confidence\;level}$: $(1-\alpha)\rightarrow$ the probability of failing to reject a true null hypothesis.
+
+***
+
+### critical value for test statistic
+
+**critical values are "the bar" we compare our evidence to determine whether it is sufficient to reject the null hypothesis**
+
+***
+
+**one-tailed tests:**
+
+For tests that a population parameter is positive, the critical value will be the value of t at the $(1-\alpha)^{th}$ (e.g. 95th, 99th) percentile of the student's test distribution. This will return a positive value.
+
+For tests that the population parameter is negative: the $\alpha^{th}$ (e.g. 5th, 1st) percentile of the student's t distribution. This will return a negative value.
+
+**Notice that for both of these, you are putting the entirety of $\alpha$ in a single tail, either the right tail, or the left tail.**
+
+***
+
+**two-tailed tests:**
+
+The only difference for two-tailed tests is that, rather than put the entirety of $\alpha$ in one tail, you put $\frac{\alpha}{2}$ in each tail.
+
+As such, you will be looking for the $(1-\frac{\alpha}{2})^{th}$ percentile of the t distribution for the critical value.
+
+For example, if you have $\alpha=0.05$, then you would be looking for the value at the $(1-0.025)=0.975$ $(97.5^{th})$ percentile of the t distribution. 
+
+Note: smaller significance level $\rightarrow$ smaller probability of type 1 error $\rightarrow$ critical value further from zero.
+
+***
+
+### **Decision rules**
+
+#### based on critical values
+
+* If the t-stat from estimates is more extreme than its critical value: **reject $H_O$ at the $\alpha$ level of significance.**
+
+* If the t-stat from estimates is between 0 and critical value: **fail to reject $H_O$ at the $\alpha$ level of significance.**
+
+In other words: reject the null if the absolute value of your t statistic is greater than the absolute value of its critical value.
+
+***
+
+#### based on p-values
+
+$\underline{p-value}$ the probability of getting a sample (data) that would give a test-statistic as extreme as the observed test-statistic, given that the null hypothesis is actually true.
+
+The way you show you have a lot of evidence against the null is to show that it is incredibly unlikely that you would get a sample of data that would give a regression estimate as extreme as your estimate if the null were true. P-values gives the probability of this event.
+
+When p-value $\leq \alpha$: **reject the null hypothesis**
+
+When p-value > $\alpha$: **fail to reject the null hypothesis**
+
+
+## Q3 - hypothesis testing
+
+### Q3.a
+Q: Calculate and report the t-statistic associated with your hypothesis tests regarding the effect of school size on math test performance. The formula for the t-statistic from above is copied below for your convenience.
+
+p value (two tailed, normal approx)
+p=.3590
+
+Since t = -0.9179 it fails to reject the null hypothesis at 5% significant levels
+
+
+$$t_{\widehat{\beta_j}}=\frac{\widehat{\beta_j}-\beta_j^{H_O}}{se(\widehat{\beta_j})}$$
+
+A: The t-statistic that corresponds to the effect of school size is `r t_stat["teacher quality"] `.
+In this case we 
+```{r}
+qt(.95, df)
+```
+### Q3.b
+
+
+
+**one-tailed hypothesis test:**
+
+
+Q: Use the function "qt" to calculate and report the critical value for t at the 5% significance level and the 1% significance level for one tailed tests.
+
+Note that the degrees of freedom in any regression is 
+
+$$degrees freedom= \# observations - \# parameters $$
+consider that there are n observations and (k+1) parameters (k slopes + 1 intercept) so that $$df=n-(k+1)\\=n-k-1$$
+
+
+```{r}
+deg.fr <- ols1$df.residual
+
+#?qt
+crit_t_5_left <- qt(0.05,deg.fr,lower.tail=T)
+crit_t_1_left <- qt(0.01,deg.fr,lower.tail=T)
+
+crit_t_5_right <- qt(0.05,deg.fr,lower.tail=F)
+crit_t_1_right <- qt(0.01,deg.fr,lower.tail=F)
+
+
+```
+A: 
+
+**two-tailed hypothesis test**
+
+Q: Find the appropriate critical value for the two-tailed hypothesis test, using the guidance above, and report it below.
+
+
+```{r}
+
+```
+A: 
+
+### Q3.c
+
+**one-tailed hypothesis test:**
+
+Q: Consider your hypothesis in Q1.a regarding the effect of school size. Refer to your estimates and compare the relevant t-statistic to the critical values above.
+
+Use the decision rules from chapter 4 that are summarized above to reach a conclusion regarding the one-tailed hypothesis test for the effect of school size on math test scores.
+
+A: The t-statistic on totcomp is `r t_stat["totcomp"] `. The critical is `r crit_t_5_left `. In this case we fail to reject the null hypothesis at the 5% significance level.  
+
+**two-tailed hypothesis test:**
+
+Q: Repeat the above, but for a two-tailed hypothesis test of the hypothesis in Q1.b.
+
+Hint- for two-tailed tests, the "rule of thumb" is that the critical value is 2 for a two sided test at the 5% significance level. 
+
+A: The t-stat on totcomp is `r t_stat["totcomp"] `. Since this is larger than 2, we reject the null hypothesis at the 5% significance level. 
+
+***
+
+## Q4 - p-values
+
+Focus on your estimates of the partial effect of school size.
+
+**p-values:**
+
+Reminder: p-value tells you the probability of getting a sample (data) that would give a t-statistic as high as (insert-calculated-t-stat-here) given that the null $\beta_1 = 0$ is true.
+
+
+Q: Use an inline R chunk to reference the p-value associated with your estimate $\widehat{\beta_1}$. Interpret the p-value.
+
+
+
+A: The p-value on enroll is `r p_val["enroll"] %>% round(digits=2) `. This states the probability of getting a sample that would give us estimates as extreme as what we see in our results, given that the null hypothesis were actually true, is `r 100*p_val["enroll"] %>% round(digits=2) `%. 
+
+## Q5 - robust standard errors
+
+I have hinted in class about standard error (estimators) that are "robust" to violations of the homoskedasticity assumption. In other words, are robust to heteroskedasticity.
+
+Here is some code to show you how to get a table with "robust standard errors".
+
+```{r}
+## robust standard errors
+coeftest(ols1, vcov = vcovHC(ols1, type="HC1"))
+
+## non-robust standard errors
+
+summary(ols1)
+```
+Q: Compare the robust s.e. estimator to the non-robust s.e. estimator. What do you note regarding differences in standard errors? in t-statistics?
+
+A:There kinda different since that the fact that heteroskedasticity is seen within robust estimators. 
+
+
+</font>
